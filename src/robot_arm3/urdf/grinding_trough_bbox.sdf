@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="grinding_trough_bbox">
+    <static>true</static>
+    <link name="grinding_trough_bbox_link">
+      <pose>0 0 0.2 0 0 0</pose>
+      <collision name="grinding_trough_bbox_collision">
+        <geometry>
+          <box>
+            <size>1.2 0.6 0.4</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="grinding_trough_bbox_visual">
+        <geometry>
+          <box>
+            <size>1.2 0.6 0.4</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.55 0.70 0.80 0.45</ambient>
+          <diffuse>0.55 0.70 0.80 0.45</diffuse>
+          <specular>0.10 0.10 0.10 1.0</specular>
+        </material>
+        <transparency>0.35</transparency>
+      </visual>
+    </link>
+  </model>
+</sdf>
