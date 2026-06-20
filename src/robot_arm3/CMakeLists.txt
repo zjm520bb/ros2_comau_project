@@ -22,7 +22,16 @@ install(PROGRAMS
 	scripts/gazebo_passive_joint_controller_06.py
 	scripts/gazebo_initial_hold_publisher_06.py
 	scripts/c4g_gazebo_sync_node.py
+	scripts/moveit_gazebo_trajectory_bridge.py
 	DESTINATION lib/${PROJECT_NAME}
 )
+
+if(BUILD_TESTING)
+	find_package(ament_cmake_pytest REQUIRED)
+	ament_add_pytest_test(
+		test_moveit_gazebo_trajectory_bridge
+		test/test_moveit_gazebo_trajectory_bridge.py
+	)
+endif()
 
 ament_package()

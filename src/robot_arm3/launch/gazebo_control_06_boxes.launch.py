@@ -2,58 +2,32 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node
-
-
-def _spawn_bbox(name, sdf_file, world, x, y, z="0.0"):
-    return Node(
-        package="ros_gz_sim",
-        executable="create",
-        name=f"spawn_{name}",
-        output="screen",
-        arguments=[
-            "-world",
-            world,
-            "-file",
-            sdf_file,
-            "-name",
-            name,
-            "-x",
-            x,
-            "-y",
-            y,
-            "-z",
-            z,
-        ],
-    )
 
 
 def generate_launch_description():
     package_share_dir = get_package_share_directory("robot_arm3")
+
     base_launch_file = os.path.join(
         package_share_dir,
         "launch",
         "gazebo_control_06.launch.py",
     )
-
-    bbox_files = {
-        "box1": os.path.join(package_share_dir, "urdf", "bbox_box1.sdf"),
-        "box2": os.path.join(package_share_dir, "urdf", "bbox_box2.sdf"),
-        "box3": os.path.join(package_share_dir, "urdf", "bbox_box3.sdf"),
-        "box4": os.path.join(package_share_dir, "urdf", "bbox_box4.sdf"),
-        "box5": os.path.join(package_share_dir, "urdf", "bbox_box5.sdf"),
-    }
+    spawn_boxes_launch_file = os.path.join(
+        package_share_dir,
+        "launch",
+        "spawn_boxes.launch.py",
+    )
 
     missing_paths = [
-        path for path in [base_launch_file, *bbox_files.values()]
+        path for path in [base_launch_file, spawn_boxes_launch_file]
         if not os.path.exists(path)
     ]
     if missing_paths:
         raise FileNotFoundError(
-            "Required Gazebo Bounding Box launch/model file(s) were not found: "
+            "Required launch file(s) were not found: "
             + ", ".join(missing_paths)
         )
 
@@ -63,18 +37,12 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(base_launch_file)
     )
 
-    spawn_bboxes = [
-        _spawn_bbox("box1_a", bbox_files["box1"], world, "-2.04", "-0.58"),
-        _spawn_bbox("box1_b", bbox_files["box1"], world, "-2.04", "0.58"),
-        _spawn_bbox("box5", bbox_files["box5"], world, "2.50", "0.0"),
-        _spawn_bbox("box2", bbox_files["box2"], world, "-0.525", "2.35"),
-        _spawn_bbox("box3", bbox_files["box3"], world, "0.90", "2.70"),
-        _spawn_bbox("box4", bbox_files["box4"], world, "0.0", "-2.54"),
-    ]
-
-    delayed_spawn_bboxes = TimerAction(
-        period=5.0,
-        actions=spawn_bboxes,
+    spawn_boxes = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(spawn_boxes_launch_file),
+        launch_arguments={
+            "world": world,
+            "spawn_delay_s": "5.0",
+        }.items(),
     )
 
     return LaunchDescription(
@@ -82,9 +50,12 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "world",
                 default_value="empty",
-                description="Gazebo Sim world name used when spawning Bounding Boxes.",
+                description=(
+                    "Gazebo Sim world name used when spawning "
+                    "Bounding Boxes."
+                ),
             ),
             base_launch,
-            delayed_spawn_bboxes,
+            spawn_boxes,
         ]
     )

@@ -41,7 +41,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(spawn_boxes_launch_file),
         launch_arguments={
             "world": world,
-            "spawn_delay_s": "10.0",
+            "spawn_delay_s": "20.0",
         }.items(),
     )
 

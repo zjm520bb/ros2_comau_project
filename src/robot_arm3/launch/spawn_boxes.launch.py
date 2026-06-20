@@ -58,9 +58,9 @@ def generate_launch_description():
     spawn_bboxes = [
         _spawn_bbox("box1_a", bbox_files["box1"], world, "-2.04", "-0.58"),
         _spawn_bbox("box1_b", bbox_files["box1"], world, "-2.04", "0.58"),
-        _spawn_bbox("box5", bbox_files["box5"], world, "2.50", "0.0"),
+        _spawn_bbox("box5", bbox_files["box5"], world, "2.5", "-2.5"),
         _spawn_bbox("box2", bbox_files["box2"], world, "-0.525", "2.35"),
-        _spawn_bbox("box3", bbox_files["box3"], world, "0.90", "2.70"),
+        _spawn_bbox("box3", bbox_files["box3"], world, "2.0", "2.5"),
         _spawn_bbox("box4", bbox_files["box4"], world, "0.0", "-2.54"),
     ]
 

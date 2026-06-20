@@ -23,9 +23,13 @@ for robot_arm3 robot</p>
   <depend>ros_gz_sim</depend>
   <depend>gz_ros2_control</depend>
   <depend>controller_manager</depend>
+  <depend>control_msgs</depend>
+  <depend>action_msgs</depend>
   <depend>joint_state_broadcaster</depend>
   <depend>joint_trajectory_controller</depend>
   <exec_depend>arm_tcp_bridge</exec_depend>
+
+  <test_depend>ament_cmake_pytest</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
