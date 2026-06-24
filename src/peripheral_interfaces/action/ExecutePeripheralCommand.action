@@ -1,0 +1,9 @@
+string device_id
+string command
+diagnostic_msgs/KeyValue[] parameters
+---
+bool success
+string message
+---
+string state
+float32 progress

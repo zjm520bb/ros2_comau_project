@@ -57,6 +57,7 @@ public:
   void clear();
 
   std::size_t size() const;
+  std::size_t max_points() const;
   bool empty() const;
   FlyQueueType type() const;
   const std::vector<FlySegment>& segments() const;

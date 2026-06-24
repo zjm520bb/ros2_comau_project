@@ -29,6 +29,7 @@
 #include "robot_arm3_moveit_control/command_parser.hpp"
 #include "robot_arm3_moveit_control/coupled_trajectory_validator.hpp"
 #include "robot_arm3_moveit_control/fly_queue.hpp"
+#include "robot_arm3_moveit_control/frame_transform_manager.hpp"
 #include "robot_arm3_moveit_control/pilz_sequence_builder.hpp"
 #include "robot_arm3_moveit_control/trajectory_speed_limiter.hpp"
 #include "robot_arm3_moveit_control/wrist_turn_preserver.hpp"
@@ -107,6 +108,50 @@ double rounded_percent(double value, const std::string& name)
   if (!std::isfinite(value) || value < 1.0 || value > 100.0)
     throw std::runtime_error(name + " must be within [1, 100]");
   return std::round(value);
+}
+
+std::string planning_failure_message(const std::string& motion,
+                                     const moveit::core::MoveItErrorCode& error)
+{
+  std::string reason;
+  switch (error.val)
+  {
+    case moveit_msgs::msg::MoveItErrorCodes::START_STATE_IN_COLLISION:
+      reason = "the start state is in collision";
+      break;
+    case moveit_msgs::msg::MoveItErrorCodes::GOAL_IN_COLLISION:
+      reason = "the goal state is in collision";
+      break;
+    case moveit_msgs::msg::MoveItErrorCodes::INVALID_MOTION_PLAN:
+      reason = "the generated trajectory contains a collision or another invalid state";
+      break;
+    case moveit_msgs::msg::MoveItErrorCodes::NO_IK_SOLUTION:
+      reason = "no inverse-kinematics solution exists for the target";
+      break;
+    case moveit_msgs::msg::MoveItErrorCodes::TIMED_OUT:
+      reason = "planning timed out before finding a valid path";
+      break;
+    case moveit_msgs::msg::MoveItErrorCodes::ROBOT_STATE_STALE:
+      reason = "the current robot state is stale";
+      break;
+    case moveit_msgs::msg::MoveItErrorCodes::FRAME_TRANSFORM_FAILURE:
+      reason = "a required coordinate-frame transform failed";
+      break;
+    case moveit_msgs::msg::MoveItErrorCodes::COLLISION_CHECKING_UNAVAILABLE:
+      reason = "collision checking is unavailable";
+      break;
+    case moveit_msgs::msg::MoveItErrorCodes::MOTION_PLAN_INVALIDATED_BY_ENVIRONMENT_CHANGE:
+      reason = "the environment changed and invalidated the trajectory";
+      break;
+    case moveit_msgs::msg::MoveItErrorCodes::PLANNING_FAILED:
+      reason = "no valid path was found";
+      break;
+    default:
+      reason = moveit::core::error_code_to_string(error);
+      break;
+  }
+
+  return motion + " planning failed: " + reason + " (MoveIt error " + std::to_string(error.val) + ")";
 }
 
 }  // namespace
@@ -217,6 +262,13 @@ public:
   }
 
 private:
+  enum class GoalTerminalState
+  {
+    SUCCEEDED,
+    ABORTED,
+    CANCELED,
+  };
+
   rclcpp_action::GoalResponse handle_goal(const rclcpp_action::GoalUUID&,
                                           std::shared_ptr<const ExecuteCommand::Goal> goal)
   {
@@ -240,13 +292,25 @@ private:
 
   rclcpp_action::CancelResponse handle_cancel(const std::shared_ptr<GoalHandle>)
   {
+    try
     {
       std::lock_guard<std::mutex> lock(sequence_goal_mutex_);
       if (active_sequence_goal_ && sequence_client_)
         sequence_client_->async_cancel_goal(active_sequence_goal_);
     }
-    if (move_group_)
-      move_group_->stop();
+    catch (const std::exception& error)
+    {
+      RCLCPP_WARN(get_logger(), "Unable to forward sequence cancellation: %s", error.what());
+    }
+    try
+    {
+      if (move_group_)
+        move_group_->stop();
+    }
+    catch (const std::exception& error)
+    {
+      RCLCPP_WARN(get_logger(), "Unable to stop MoveIt execution: %s", error.what());
+    }
     return rclcpp_action::CancelResponse::ACCEPT;
   }
 
@@ -257,7 +321,7 @@ private:
       auto result = std::make_shared<ExecuteCommand::Result>();
       result->success = false;
       result->message = "Server became busy before execution";
-      goal_handle->abort(result);
+      finish_goal(goal_handle, result, GoalTerminalState::ABORTED);
       return;
     }
     std::thread(&MoveItCommandServer::execute, this, goal_handle).detach();
@@ -267,38 +331,71 @@ private:
   {
     auto feedback = std::make_shared<ExecuteCommand::Feedback>();
     feedback->state = state;
-    goal_handle->publish_feedback(feedback);
+    try
+    {
+      goal_handle->publish_feedback(feedback);
+    }
+    catch (const std::exception& error)
+    {
+      RCLCPP_WARN(get_logger(), "Unable to publish command feedback '%s': %s", state.c_str(), error.what());
+    }
+  }
+
+  void finish_goal(const std::shared_ptr<GoalHandle>& goal_handle,
+                   const std::shared_ptr<ExecuteCommand::Result>& result, GoalTerminalState state) noexcept
+  {
+    try
+    {
+      switch (state)
+      {
+        case GoalTerminalState::SUCCEEDED:
+          goal_handle->succeed(result);
+          break;
+        case GoalTerminalState::ABORTED:
+          goal_handle->abort(result);
+          break;
+        case GoalTerminalState::CANCELED:
+          goal_handle->canceled(result);
+          break;
+      }
+    }
+    catch (const std::exception& error)
+    {
+      RCLCPP_WARN(get_logger(), "Command completed but its Action result could not be delivered: %s", error.what());
+    }
   }
 
   void execute(const std::shared_ptr<GoalHandle> goal_handle)
   {
     auto result = std::make_shared<ExecuteCommand::Result>();
+    bool command_succeeded = false;
     try
     {
       const ParsedCommand command = parse_command(goal_handle->get_goal()->command);
       result->message = dispatch(command, goal_handle);
-
-      if (goal_handle->is_canceling())
-      {
-        result->success = false;
-        result->message = "Command canceled";
-        goal_handle->canceled(result);
-      }
-      else
-      {
-        result->success = true;
-        goal_handle->succeed(result);
-      }
+      command_succeeded = true;
     }
     catch (const std::exception& error)
     {
       RCLCPP_ERROR(get_logger(), "Command failed: %s", error.what());
-      result->success = false;
       result->message = error.what();
-      if (goal_handle->is_canceling())
-        goal_handle->canceled(result);
-      else
-        goal_handle->abort(result);
+    }
+
+    if (goal_handle->is_canceling())
+    {
+      result->success = false;
+      result->message = "Command canceled";
+      finish_goal(goal_handle, result, GoalTerminalState::CANCELED);
+    }
+    else if (command_succeeded)
+    {
+      result->success = true;
+      finish_goal(goal_handle, result, GoalTerminalState::SUCCEEDED);
+    }
+    else
+    {
+      result->success = false;
+      finish_goal(goal_handle, result, GoalTerminalState::ABORTED);
     }
     busy_.store(false);
   }
@@ -314,6 +411,18 @@ private:
       case CommandType::GET_JOINTS:
         publish_feedback(goal_handle, "reading_joint_state");
         return get_joints();
+      case CommandType::GET_FLY_QUEUE:
+        return get_fly_queue();
+      case CommandType::GET_MOTION_SETTINGS:
+        return get_motion_settings();
+      case CommandType::SET_BASE:
+        return set_base(command.values);
+      case CommandType::SET_USER_FRAME:
+        return set_user_frame(command.values);
+      case CommandType::SET_TOOL:
+        throw std::runtime_error(
+            "Dynamic setTool is not supported; configure Link_6 -> tcp_link in robot_arm3_moveit.urdf.xacro "
+            "before launching MoveIt");
       case CommandType::SET_ORIENTATION:
         return set_orientation(command.values);
       case CommandType::SET_SPEED_JOINT:
@@ -356,6 +465,22 @@ private:
     if (std::abs(mode) > 1e-9)
       throw std::runtime_error("Only setOrientation:0 (RS_WORLD) is supported in this version");
     return "Orientation mode set to RS_WORLD";
+  }
+
+  std::string set_base(const std::vector<double>& values)
+  {
+    if (!fly_queue_->empty())
+      throw std::runtime_error("Clear the FLY queue before changing the base frame");
+    frame_transforms_.set_base(six_values(values, "setBase"));
+    return "Base frame updated; Cartesian commands remain expressed in the active user frame";
+  }
+
+  std::string set_user_frame(const std::vector<double>& values)
+  {
+    if (!fly_queue_->empty())
+      throw std::runtime_error("Clear the FLY queue before changing the user frame");
+    frame_transforms_.set_user_frame(six_values(values, "setUframe"));
+    return "User frame updated; Cartesian commands and getPose now use this frame";
   }
 
   std::string set_speed_joint(const std::vector<double>& values)
@@ -481,7 +606,7 @@ private:
     pose.position.y = values.at(offset + 1) / 1000.0;
     pose.position.z = values.at(offset + 2) / 1000.0;
     pose.orientation = aer_to_quaternion(values.at(offset + 3), values.at(offset + 4), values.at(offset + 5));
-    return pose;
+    return frame_transforms_.command_to_base(pose);
   }
 
   ScalingResult postprocess_trajectory(moveit_msgs::msg::RobotTrajectory& trajectory, bool preserve_wrist_turns,
@@ -532,8 +657,9 @@ private:
 
     publish_feedback(goal_handle, "planning_pilz_ptp");
     moveit::planning_interface::MoveGroupInterface::Plan plan;
-    if (move_group_->plan(plan) != moveit::core::MoveItErrorCode::SUCCESS)
-      throw std::runtime_error("MoveIt failed to plan the joint motion");
+    const auto planning_result = move_group_->plan(plan);
+    if (planning_result != moveit::core::MoveItErrorCode::SUCCESS)
+      throw std::runtime_error(planning_failure_message("Pilz PTP", planning_result));
     publish_feedback(goal_handle, "validating_and_retiming_pilz_ptp");
     const ScalingResult scaling = postprocess_trajectory(plan.trajectory_, false, false);
     if (goal_handle->is_canceling())
@@ -557,7 +683,7 @@ private:
     const auto planning_result = move_group_->plan(plan);
     move_group_->clearPoseTargets();
     if (planning_result != moveit::core::MoveItErrorCode::SUCCESS)
-      throw std::runtime_error("Pilz failed to plan the LIN motion");
+      throw std::runtime_error(planning_failure_message("Pilz LIN", planning_result));
 
     publish_feedback(goal_handle, "validating_and_retiming_pilz_lin");
     const ScalingResult scaling = postprocess_trajectory(plan.trajectory_, true, true);
@@ -601,7 +727,7 @@ private:
     move_group_->clearPathConstraints();
     move_group_->clearPoseTargets();
     if (planning_result != moveit::core::MoveItErrorCode::SUCCESS)
-      throw std::runtime_error("Pilz failed to plan the CIRC motion");
+      throw std::runtime_error(planning_failure_message("Pilz CIRC", planning_result));
 
     publish_feedback(goal_handle, "validating_and_retiming_pilz_circ");
     const ScalingResult scaling = postprocess_trajectory(plan.trajectory_, true, true);
@@ -629,6 +755,7 @@ private:
     options.planning_group = planning_group_;
     options.base_frame = base_frame_;
     options.end_effector_link = end_effector_link_;
+    options.base_from_user = frame_transforms_.base_from_user();
     options.pipeline_id = pilz_pipeline_id_;
     options.ptp_planner_id = ptp_planner_id_;
     options.lin_planner_id = lin_planner_id_;
@@ -689,8 +816,8 @@ private:
 
     const auto& response = wrapped_result.result->response;
     if (response.error_code.val != moveit_msgs::msg::MoveItErrorCodes::SUCCESS)
-      throw std::runtime_error("Pilz sequence planner returned error code " +
-                               std::to_string(response.error_code.val));
+      throw std::runtime_error(planning_failure_message(
+          "Pilz sequence", moveit::core::MoveItErrorCode(response.error_code)));
     if (response.planned_trajectories.size() != 1)
       throw std::runtime_error("Expected one combined arm trajectory from Pilz sequence planner");
 
@@ -717,11 +844,103 @@ private:
   std::string get_pose()
   {
     const geometry_msgs::msg::PoseStamped pose = move_group_->getCurrentPose(end_effector_link_);
-    const Eigen::Vector3d aer = quaternion_to_aer(pose.pose.orientation);
+    const geometry_msgs::msg::Pose user_pose = frame_transforms_.base_to_user(pose.pose);
+    const Eigen::Vector3d aer = quaternion_to_aer(user_pose.orientation);
     std::ostringstream message;
-    message << std::fixed << std::setprecision(6) << "frame=" << pose.header.frame_id << ", X="
-            << pose.pose.position.x * 1000.0 << ", Y=" << pose.pose.position.y * 1000.0 << ", Z="
-            << pose.pose.position.z * 1000.0 << ", A=" << aer.x() << ", E=" << aer.y() << ", R=" << aer.z();
+    message << std::fixed << std::setprecision(6) << "frame=user_frame, planning_frame=" << pose.header.frame_id
+            << ", link=" << end_effector_link_ << ", X=" << user_pose.position.x * 1000.0
+            << ", Y=" << user_pose.position.y * 1000.0 << ", Z=" << user_pose.position.z * 1000.0
+            << ", A=" << aer.x() << ", E=" << aer.y() << ", R=" << aer.z();
+    return message.str();
+  }
+
+  std::string get_fly_queue() const
+  {
+    std::string queue_type = "NONE";
+    if (fly_queue_->type() == FlyQueueType::CARTESIAN)
+      queue_type = "CARTESIAN";
+    else if (fly_queue_->type() == FlyQueueType::JOINT)
+      queue_type = "JOINT";
+
+    std::ostringstream message;
+    message << std::fixed << std::setprecision(6) << "type=" << queue_type << ", count=" << fly_queue_->size()
+            << ", max=" << fly_queue_->max_points() << ", segments=[";
+    for (std::size_t index = 0; index < fly_queue_->segments().size(); ++index)
+    {
+      if (index > 0)
+        message << "; ";
+      const FlySegment& segment = fly_queue_->segments()[index];
+      std::string segment_type = "JOINT";
+      if (segment.type == FlySegmentType::LINEAR)
+        segment_type = "LIN";
+      else if (segment.type == FlySegmentType::CIRCULAR)
+        segment_type = "CIRC";
+      message << index + 1 << ":" << segment_type << "(";
+      for (std::size_t value_index = 0; value_index < segment.values.size(); ++value_index)
+      {
+        if (value_index > 0)
+          message << ",";
+        message << segment.values[value_index];
+      }
+      message << ")";
+    }
+    message << "]; units=JOINT[deg], LIN/CIRC[mm,deg]";
+    return message.str();
+  }
+
+  std::string get_motion_settings() const
+  {
+    std::ostringstream message;
+    message << std::fixed << std::setprecision(6) << "orientation=RS_WORLD, joint_overrides_percent=[";
+    for (std::size_t axis = 0; axis < speed_settings_.joint_overrides_percent.size(); ++axis)
+    {
+      if (axis > 0)
+        message << ",";
+      message << speed_settings_.joint_overrides_percent[axis];
+    }
+    message << "], physical_joint_max_velocities_rad_s=[";
+    for (std::size_t axis = 0; axis < speed_settings_.max_joint_velocities.size(); ++axis)
+    {
+      if (axis > 0)
+        message << ",";
+      message << speed_settings_.max_joint_velocities[axis];
+    }
+    message << "], physical_joint_max_accelerations_rad_s2=[";
+    for (std::size_t axis = 0; axis < speed_settings_.max_joint_accelerations.size(); ++axis)
+    {
+      if (axis > 0)
+        message << ",";
+      message << speed_settings_.max_joint_accelerations[axis];
+    }
+    message << "], linear_speed_mps=" << speed_settings_.linear_speed_mps
+            << ", acceleration_percent=" << speed_settings_.acceleration_percent
+            << ", deceleration_percent=" << speed_settings_.deceleration_percent
+            << ", planning_frame=" << base_frame_ << ", end_effector_link=" << end_effector_link_;
+
+    const auto append_frame = [&message](const char* name, const std::array<double, 6>& values) {
+      message << ", " << name << "_mm_deg=[";
+      for (std::size_t index = 0; index < values.size(); ++index)
+      {
+        if (index > 0)
+          message << ",";
+        message << values[index];
+      }
+      message << "]";
+    };
+    append_frame("base", frame_transforms_.base_values());
+    append_frame("user_frame", frame_transforms_.user_frame_values());
+
+    if (fly_settings_.mode == FlyMode::CARTESIAN)
+    {
+      message << ", fly_mode=CARTESIAN, fly_stress_percent=" << fly_settings_.stress_percent
+              << ", fly_trajectory_mode=" << fly_settings_.trajectory_mode
+              << ", fly_distance_mm=" << fly_settings_.distance_mm;
+    }
+    else
+    {
+      message << ", fly_mode=NORMAL, fly_normal_percent=" << fly_settings_.normal_percent
+              << ", fly_norm_radius_safety_factor=" << fly_norm_radius_safety_factor_;
+    }
     return message.str();
   }
 
@@ -774,6 +993,7 @@ private:
   std::string circ_planner_id_;
   double current_state_timeout_{ 2.0 };
   MotionSpeedSettings speed_settings_;
+  FrameTransformManager frame_transforms_;
   std::unique_ptr<FlyQueue> fly_queue_;
   FlySettings fly_settings_;
   double pilz_max_trans_velocity_{ 1.0 };
@@ -797,9 +1017,20 @@ int main(int argc, char** argv)
   try
   {
     node->initialize();
-    rclcpp::executors::MultiThreadedExecutor executor;
+    rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(node);
-    executor.spin();
+    while (rclcpp::ok())
+    {
+      try
+      {
+        executor.spin_once(std::chrono::milliseconds(100));
+      }
+      catch (const rclcpp::exceptions::RCLError& error)
+      {
+        if (rclcpp::ok())
+          RCLCPP_WARN(node->get_logger(), "Recoverable ROS communication error: %s", error.what());
+      }
+    }
     executor.remove_node(node);
   }
   catch (const std::exception& error)

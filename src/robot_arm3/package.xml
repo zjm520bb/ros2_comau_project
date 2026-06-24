@@ -6,8 +6,8 @@
     <p>This package contains configuration data, 3D models and launch files
 for robot_arm3 robot</p>
   </description>
-  <author>TODO</author>
-  <maintainer email="TODO@email.com">TODO</maintainer>
+  <author email="jm867019644@gmail.com">Jiaming</author>
+  <maintainer email="jm867019644@gmail.com">Jiaming</maintainer>
   <license>BSD</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
@@ -16,6 +16,10 @@ for robot_arm3 robot</p>
   <depend>rviz2</depend>
   <depend>joint_state_publisher_gui</depend>
   <depend>rclpy</depend>
+  <depend>ament_index_python</depend>
+  <depend>geometry_msgs</depend>
+  <depend>moveit_msgs</depend>
+  <depend>shape_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
   <depend>trajectory_msgs</depend>
@@ -25,6 +29,9 @@ for robot_arm3 robot</p>
   <depend>controller_manager</depend>
   <depend>control_msgs</depend>
   <depend>action_msgs</depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
   <depend>joint_state_broadcaster</depend>
   <depend>joint_trajectory_controller</depend>
   <exec_depend>arm_tcp_bridge</exec_depend>

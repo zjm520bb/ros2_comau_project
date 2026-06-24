@@ -4,7 +4,7 @@
 #include <moveit/robot_state/robot_state.h>
 #include <moveit_msgs/msg/motion_sequence_request.hpp>
 
-#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 #include <string>
 #include <vector>
@@ -20,6 +20,7 @@ struct SequenceBuildOptions
   std::string planning_group;
   std::string base_frame;
   std::string end_effector_link;
+  Eigen::Isometry3d base_from_user{ Eigen::Isometry3d::Identity() };
   std::string pipeline_id;
   std::string ptp_planner_id;
   std::string lin_planner_id;

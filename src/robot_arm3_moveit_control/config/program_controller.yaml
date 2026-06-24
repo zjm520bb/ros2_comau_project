@@ -2,8 +2,8 @@
   ros__parameters:
     action_name: /sim/arm/execute
     planning_group: arm
-    base_frame: base_link
-    end_effector_link: Link_6
+    base_frame: c4g_base
+    end_effector_link: tcp_link
     pilz_pipeline_id: pilz_industrial_motion_planner
     ptp_planner_id: PTP
     lin_planner_id: LIN

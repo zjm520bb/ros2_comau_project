@@ -1,0 +1,15 @@
+recording:
+  label: sim
+  topics:
+    - /clock
+    - /joint_states
+    - /tf
+    - /tf_static
+    - /sim/arm/execute/_action/status
+    - /peripherals/events
+    - /peripherals/schleiftrog/state
+    - /peripherals/motorspindel/state
+    - /peripherals/fliehkraftgleitschleifanlage/state
+    - /peripherals/festo_pneumatiksteuerung/state
+    - /sensors/tool_wrench
+    - /sensors/process_pressure

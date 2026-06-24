@@ -289,6 +289,26 @@ def add_fly_linear(
     return f"addFlyLin:{_format_values(values)}"
 
 
+def add_fly_circular(
+    via_pose: Sequence[float],
+    target_pose: Sequence[float],
+) -> str:
+    via_values = _validate_finite(
+        via_pose,
+        6,
+        "FLY circular via pose",
+    )
+    target_values = _validate_finite(
+        target_pose,
+        6,
+        "FLY circular target pose",
+    )
+
+    values = via_values + target_values
+
+    return f"addFlyCirc:{_format_values(values)}"
+
+
 def add_fly_joint(
     joints_deg: Sequence[float],
 ) -> str:

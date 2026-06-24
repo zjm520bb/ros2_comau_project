@@ -31,6 +31,13 @@ target_include_directories(fly_queue PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
+add_library(frame_transform_manager src/frame_transform_manager.cpp)
+target_include_directories(frame_transform_manager PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_link_libraries(frame_transform_manager Eigen3::Eigen)
+ament_target_dependencies(frame_transform_manager geometry_msgs)
+
 add_library(trajectory_speed_limiter src/trajectory_speed_limiter.cpp)
 target_include_directories(trajectory_speed_limiter PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -53,14 +60,14 @@ add_library(pilz_sequence_builder src/pilz_sequence_builder.cpp)
 target_include_directories(pilz_sequence_builder PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-target_link_libraries(pilz_sequence_builder fly_queue Eigen3::Eigen)
+target_link_libraries(pilz_sequence_builder fly_queue frame_transform_manager Eigen3::Eigen)
 ament_target_dependencies(pilz_sequence_builder
   geometry_msgs
   moveit_core
   moveit_msgs)
 
 add_executable(moveit_command_server src/moveit_command_server.cpp)
-target_link_libraries(moveit_command_server command_parser fly_queue pilz_sequence_builder trajectory_speed_limiter trajectory_postprocessing Eigen3::Eigen)
+target_link_libraries(moveit_command_server command_parser fly_queue frame_transform_manager pilz_sequence_builder trajectory_speed_limiter trajectory_postprocessing Eigen3::Eigen)
 ament_target_dependencies(moveit_command_server
   arm_tcp_bridge_interfaces
   builtin_interfaces
@@ -71,7 +78,7 @@ ament_target_dependencies(moveit_command_server
   rclcpp
   rclcpp_action)
 
-install(TARGETS command_parser fly_queue pilz_sequence_builder trajectory_speed_limiter trajectory_postprocessing moveit_command_server
+install(TARGETS command_parser fly_queue frame_transform_manager pilz_sequence_builder trajectory_speed_limiter trajectory_postprocessing moveit_command_server
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME})
@@ -91,6 +98,9 @@ if(BUILD_TESTING)
   ament_add_gtest(test_fly_queue test/test_fly_queue.cpp)
   target_link_libraries(test_fly_queue fly_queue pilz_sequence_builder Eigen3::Eigen)
   ament_target_dependencies(test_fly_queue moveit_msgs)
+  ament_add_gtest(test_frame_transform_manager test/test_frame_transform_manager.cpp)
+  target_link_libraries(test_frame_transform_manager frame_transform_manager Eigen3::Eigen)
+  ament_target_dependencies(test_frame_transform_manager geometry_msgs)
 endif()
 
 ament_package()

@@ -72,6 +72,10 @@ ParsedCommand parse_command(const std::string& text)
     return { CommandType::GET_POSE, {} };
   if (command == "getJoints")
     return { CommandType::GET_JOINTS, {} };
+  if (command == "getFlyQueue")
+    return { CommandType::GET_FLY_QUEUE, {} };
+  if (command == "getMotionSettings")
+    return { CommandType::GET_MOTION_SETTINGS, {} };
   if (command == "clearFlyQueue")
     return { CommandType::CLEAR_FLY_QUEUE, {} };
   if (command == "executeFlyQueue")
@@ -84,6 +88,12 @@ ParsedCommand parse_command(const std::string& text)
   const std::string name = trim(command.substr(0, separator));
   const std::string payload = command.substr(separator + 1);
 
+  if (name == "setBase")
+    return { CommandType::SET_BASE, parse_values(payload, 6) };
+  if (name == "setUframe" || name == "userFrame")
+    return { CommandType::SET_USER_FRAME, parse_values(payload, 6) };
+  if (name == "setTool" || name == "tool")
+    return { CommandType::SET_TOOL, parse_values(payload, 6) };
   if (name == "setOrientation")
     return { CommandType::SET_ORIENTATION, parse_values(payload, 1) };
   if (name == "setSpeedJnt")

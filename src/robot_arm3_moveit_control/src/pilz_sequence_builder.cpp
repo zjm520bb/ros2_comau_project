@@ -1,5 +1,7 @@
 #include "robot_arm3_moveit_control/pilz_sequence_builder.hpp"
 
+#include "robot_arm3_moveit_control/frame_transform_manager.hpp"
+
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <moveit/kinematic_constraints/utils.h>
 #include <moveit/robot_state/conversions.h>
@@ -40,6 +42,12 @@ geometry_msgs::msg::Pose pose_from_values(const std::vector<double>& values, std
   pose.orientation.z = orientation.z();
   pose.orientation.w = orientation.w();
   return pose;
+}
+
+geometry_msgs::msg::Pose command_pose_from_values(const std::vector<double>& values, std::size_t offset,
+                                                  const SequenceBuildOptions& options)
+{
+  return transform_pose(options.base_from_user, pose_from_values(values, offset));
 }
 
 std::array<double, 6> planning_joint_target(const std::vector<double>& values, const SequenceBuildOptions& options)
@@ -148,7 +156,8 @@ moveit_msgs::msg::MotionSequenceRequest build_pilz_sequence(
     }
     else
     {
-      const auto pose = pose_from_values(segment.values, segment.type == FlySegmentType::CIRCULAR ? 6 : 0);
+      const auto pose = command_pose_from_values(
+          segment.values, segment.type == FlySegmentType::CIRCULAR ? 6 : 0, options);
       target_points.emplace_back(pose.position.x, pose.position.y, pose.position.z);
     }
   }
@@ -183,7 +192,8 @@ moveit_msgs::msg::MotionSequenceRequest build_pilz_sequence(
       request.planner_id =
           segment.type == FlySegmentType::LINEAR ? options.lin_planner_id : options.circ_planner_id;
       request.goal_constraints.push_back(
-          cartesian_goal(pose_from_values(segment.values, segment.type == FlySegmentType::CIRCULAR ? 6 : 0), options));
+          cartesian_goal(command_pose_from_values(
+              segment.values, segment.type == FlySegmentType::CIRCULAR ? 6 : 0, options), options));
       if (segment.type == FlySegmentType::CIRCULAR)
       {
         moveit_msgs::msg::PositionConstraint interim;
@@ -191,7 +201,7 @@ moveit_msgs::msg::MotionSequenceRequest build_pilz_sequence(
         interim.link_name = options.end_effector_link;
         interim.weight = 1.0;
         geometry_msgs::msg::Pose interim_pose;
-        interim_pose.position = pose_from_values(segment.values, 0).position;
+        interim_pose.position = command_pose_from_values(segment.values, 0, options).position;
         interim_pose.orientation.w = 1.0;
         interim.constraint_region.primitive_poses.push_back(interim_pose);
         request.path_constraints.name = "interim";

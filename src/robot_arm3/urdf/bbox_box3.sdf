@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
 <sdf version="1.7">
-  <model name="bbox_box3">
+  <model name="festo_pneumatiksteuerung_bbox">
     <static>true</static>
-    <link name="bbox_box3_link">
+    <link name="festo_pneumatiksteuerung_bbox_link">
       <pose>0 0 0.91 0 0 0</pose>
-      <collision name="bbox_box3_collision">
+      <collision name="festo_pneumatiksteuerung_bbox_collision">
         <geometry>
           <box>
             <size>1.00 1.40 1.82</size>
           </box>
         </geometry>
       </collision>
-      <visual name="bbox_box3_visual">
+      <visual name="festo_pneumatiksteuerung_bbox_visual">
         <geometry>
           <box>
             <size>1.00 1.40 1.82</size>

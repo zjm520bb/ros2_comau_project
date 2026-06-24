@@ -1,0 +1,24 @@
+frame_id: c4g_base
+planning_padding: 0.02
+
+# Model poses are expressed in metres and radians in the C4G coordinate frame.
+# Gazebo world and c4g_base share the same origin and orientation.
+boxes:
+  - id: schleiftrog_a
+    sdf: bbox_box1.sdf
+    pose: [2.04, 0.58, 0.0, 0.0, 0.0, 3.141592653589793]
+  - id: schleiftrog_b
+    sdf: bbox_box1.sdf
+    pose: [2.04, -0.58, 0.0, 0.0, 0.0, 3.141592653589793]
+  - id: motorspindel
+    sdf: bbox_box5.sdf
+    pose: [-2.5, 2.5, 0.0, 0.0, 0.0, 3.141592653589793]
+  - id: fliehkraftgleitschleifanlage
+    sdf: bbox_box2.sdf
+    pose: [0.525, -2.35, 0.0, 0.0, 0.0, 3.141592653589793]
+  - id: festo_pneumatiksteuerung
+    sdf: bbox_box3.sdf
+    pose: [-2.0, -2.5, 0.0, 0.0, 0.0, 3.141592653589793]
+  - id: box4
+    sdf: bbox_box4.sdf
+    pose: [0.0, 2.54, 0.0, 0.0, 0.0, 3.141592653589793]

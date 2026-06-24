@@ -4,7 +4,7 @@
   <version>0.1.0</version>
   <description>Programmatic MoveIt command server for the robot_arm3 simulation.</description>
 
-  <maintainer email="867019644@qq.com">Jiaming</maintainer>
+  <maintainer email="jm867019644@gmail.com">Jiaming</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

@@ -1,0 +1,9 @@
+std_msgs/Header header
+string device_id
+string display_name
+string device_type
+string event_type
+string command
+bool success
+string detail
+diagnostic_msgs/KeyValue[] values

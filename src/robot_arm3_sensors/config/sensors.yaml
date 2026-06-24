@@ -1,0 +1,23 @@
+sensors:
+  - id: tool_wrench
+    display_name: Virtual Tool Wrench Sensor
+    type: wrench
+    topic: /sensors/tool_wrench
+    frame_id: tcp_link
+    publish_rate_hz: 20.0
+    wrench:
+      force_base_n: [0.0, 0.0, 8.0]
+      force_amplitude_n: [1.2, 0.8, 2.0]
+      torque_base_nm: [0.0, 0.0, 0.0]
+      torque_amplitude_nm: [0.15, 0.10, 0.08]
+
+  - id: process_pressure
+    display_name: Virtual Process Pressure Sensor
+    type: fluid_pressure
+    topic: /sensors/process_pressure
+    frame_id: process_cell
+    publish_rate_hz: 10.0
+    pressure:
+      base_pa: 600000.0
+      amplitude_pa: 15000.0
+      variance: 2500.0

@@ -1,0 +1,65 @@
+process_name: schleiftrog_motorspindel_demo
+steps:
+  - type: peripheral
+    device_id: schleiftrog
+    command: wait_ready
+
+  - type: peripheral
+    device_id: fliehkraftgleitschleifanlage
+    command: wait_ready
+
+  - type: wait_state
+    device_id: fliehkraftgleitschleifanlage
+    key: safe
+    value: true
+    timeout_s: 3.0
+
+  - type: peripheral
+    device_id: festo_pneumatiksteuerung
+    command: clamp
+
+  - type: wait_state
+    device_id: festo_pneumatiksteuerung
+    key: clamped
+    value: true
+    timeout_s: 3.0
+
+  - type: peripheral
+    device_id: motorspindel
+    command: set_speed
+    parameters:
+      rpm: 3000
+
+  - type: peripheral
+    device_id: motorspindel
+    command: start
+
+  - type: wait_state
+    device_id: motorspindel
+    key: actual_rpm
+    min: 2900
+    max: 3100
+    timeout_s: 5.0
+
+  - type: robot
+    command: Hello
+
+  - type: peripheral
+    device_id: motorspindel
+    command: stop
+
+  - type: wait_state
+    device_id: motorspindel
+    key: actual_rpm
+    max: 1
+    timeout_s: 5.0
+
+  - type: peripheral
+    device_id: festo_pneumatiksteuerung
+    command: release
+
+  - type: wait_state
+    device_id: festo_pneumatiksteuerung
+    key: clamped
+    value: false
+    timeout_s: 3.0

@@ -7,8 +7,8 @@
     ROS 2 action interfaces for the Comau C4G TCP bridge.
   </description>
 
-  <maintainer email="you@example.com">
-    Jiaming Zhang
+  <maintainer email="jm867019644@gmail.com">
+    Jiaming
   </maintainer>
 
   <license>MIT</license>
@@ -35,4 +35,3 @@
     </build_type>
   </export>
 </package>
-

@@ -11,6 +11,8 @@ TEST(CommandParser, ParsesSimpleCommands)
   EXPECT_EQ(control::parse_command(" Hello ").type, control::CommandType::HELLO);
   EXPECT_EQ(control::parse_command("getPose").type, control::CommandType::GET_POSE);
   EXPECT_EQ(control::parse_command("getJoints").type, control::CommandType::GET_JOINTS);
+  EXPECT_EQ(control::parse_command("getFlyQueue").type, control::CommandType::GET_FLY_QUEUE);
+  EXPECT_EQ(control::parse_command("getMotionSettings").type, control::CommandType::GET_MOTION_SETTINGS);
   EXPECT_EQ(control::parse_command("clearFlyQueue").type, control::CommandType::CLEAR_FLY_QUEUE);
   EXPECT_EQ(control::parse_command("executeFlyQueue").type, control::CommandType::EXECUTE_FLY_QUEUE);
 }
@@ -47,6 +49,15 @@ TEST(CommandParser, ParsesSpeedCommands)
   EXPECT_DOUBLE_EQ(overrides.values[5], 10.0);
 }
 
+TEST(CommandParser, ParsesFrameCommands)
+{
+  EXPECT_EQ(control::parse_command("setBase:1,2,3,4,5,6").type, control::CommandType::SET_BASE);
+  EXPECT_EQ(control::parse_command("setUframe:1,2,3,4,5,6").type, control::CommandType::SET_USER_FRAME);
+  EXPECT_EQ(control::parse_command("userFrame:1,2,3,4,5,6").type, control::CommandType::SET_USER_FRAME);
+  EXPECT_EQ(control::parse_command("setTool:1,2,3,4,5,6").type, control::CommandType::SET_TOOL);
+  EXPECT_EQ(control::parse_command("tool:1,2,3,4,5,6").type, control::CommandType::SET_TOOL);
+}
+
 TEST(CommandParser, ParsesMoveCircular)
 {
   const auto command = control::parse_command(
@@ -73,6 +84,7 @@ TEST(CommandParser, RejectsWrongParameterCount)
   EXPECT_THROW(control::parse_command("moveJoint:1,2,3"), control::CommandParseError);
   EXPECT_THROW(control::parse_command("moveLin:1,2,3,4,5,6,7"), control::CommandParseError);
   EXPECT_THROW(control::parse_command("setJointOverrides:1,2,3"), control::CommandParseError);
+  EXPECT_THROW(control::parse_command("setBase:1,2,3"), control::CommandParseError);
   EXPECT_THROW(control::parse_command("moveCircular:1,2,3,4,5,6"), control::CommandParseError);
   EXPECT_THROW(control::parse_command("setFlyCart:10,0"), control::CommandParseError);
   EXPECT_THROW(control::parse_command("addFlyJoint:1,2,3"), control::CommandParseError);

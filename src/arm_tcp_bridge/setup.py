@@ -39,8 +39,8 @@ setup(
         "setuptools",
     ],
     zip_safe=True,
-    maintainer="Jiaming Zhang",
-    maintainer_email="you@example.com",
+    maintainer="Jiaming",
+    maintainer_email="jm867019644@gmail.com",
     description=(
         "ROS 2 TCP bridge for Comau C4G motion commands "
         "and actual joint-position feedback"
@@ -58,6 +58,10 @@ setup(
             (
                 "joint_feedback_node = "
                 "arm_tcp_bridge.joint_feedback_node:main"
+            ),
+            (
+                "send_fly_queue_template = "
+                "arm_tcp_bridge.fly_queue_sender_template:main"
             ),
         ],
     },

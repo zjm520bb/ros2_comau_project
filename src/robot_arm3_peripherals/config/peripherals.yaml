@@ -1,0 +1,42 @@
+peripherals:
+  - id: schleiftrog
+    display_name: Schleiftrog
+    type: passive_fixture
+    collision_objects: [schleiftrog_a, schleiftrog_b]
+    initial_state: ready
+    initial_mode: static_fixture
+    values:
+      occupied: false
+      safe: true
+
+  - id: motorspindel
+    display_name: Motorspindel
+    type: spindle
+    collision_objects: [motorspindel]
+    initial_state: idle
+    initial_mode: manual
+    values:
+      target_rpm: 0
+      actual_rpm: 0
+      running: false
+
+  - id: fliehkraftgleitschleifanlage
+    display_name: Fliehkraftgleitschleifanlage
+    type: passive_fixture
+    collision_objects: [fliehkraftgleitschleifanlage]
+    initial_state: ready
+    initial_mode: static_fixture
+    values:
+      occupied: false
+      safe: true
+
+  - id: festo_pneumatiksteuerung
+    display_name: Festo Pneumatiksteuerung
+    type: pneumatic_controller
+    collision_objects: [festo_pneumatiksteuerung]
+    initial_state: released
+    initial_mode: manual
+    values:
+      pressure_bar: 6.0
+      clamped: false
+      valve_state: release

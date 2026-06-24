@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
 <sdf version="1.7">
-  <model name="bbox_box2">
+  <model name="fliehkraftgleitschleifanlage_bbox">
     <static>true</static>
-    <link name="bbox_box2_link">
+    <link name="fliehkraftgleitschleifanlage_bbox_link">
       <pose>0 0 0.65 0 0 0</pose>
-      <collision name="bbox_box2_collision">
+      <collision name="fliehkraftgleitschleifanlage_bbox_collision">
         <geometry>
           <box>
             <size>1.70 1.05 1.30</size>
           </box>
         </geometry>
       </collision>
-      <visual name="bbox_box2_visual">
+      <visual name="fliehkraftgleitschleifanlage_bbox_visual">
         <geometry>
           <box>
             <size>1.70 1.05 1.30</size>

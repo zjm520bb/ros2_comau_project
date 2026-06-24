@@ -1,0 +1,36 @@
+# Fixed keys published in peripheral_interfaces/msg/PeripheralState.values.
+# Values are encoded as diagnostic_msgs/KeyValue strings on the ROS topic.
+schemas:
+  passive_fixture:
+    fixed_keys:
+      occupied:
+        type: bool
+        description: true when the fixture area is occupied by a workpiece.
+      safe:
+        type: bool
+        description: true when the fixture is safe for robot motion.
+
+  spindle:
+    fixed_keys:
+      target_rpm:
+        type: number
+        description: Commanded spindle speed in revolutions per minute.
+      actual_rpm:
+        type: number
+        description: Simulated or measured spindle speed in revolutions per minute.
+      running:
+        type: bool
+        description: true only after the spindle reaches its commanded speed.
+
+  pneumatic_controller:
+    fixed_keys:
+      pressure_bar:
+        type: number
+        description: Pneumatic supply pressure in bar.
+      clamped:
+        type: bool
+        description: true when the pneumatic actuator is in the clamped state.
+      valve_state:
+        type: string
+        allowed_values: [clamp, release]
+        description: Commanded valve direction.

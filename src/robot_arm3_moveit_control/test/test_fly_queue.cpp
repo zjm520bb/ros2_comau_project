@@ -15,6 +15,7 @@ TEST(FlyQueue, EnforcesCapacityAndType)
   queue.add(control::FlySegmentType::CIRCULAR, { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 });
   EXPECT_THROW(queue.add(control::FlySegmentType::LINEAR, { 1, 2, 3, 4, 5, 6 }), control::FlyQueueError);
   EXPECT_EQ(queue.size(), 2u);
+  EXPECT_EQ(queue.max_points(), 2u);
   queue.clear();
   EXPECT_TRUE(queue.empty());
   EXPECT_EQ(queue.type(), control::FlyQueueType::NONE);

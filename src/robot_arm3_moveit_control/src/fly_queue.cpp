@@ -34,6 +34,11 @@ std::size_t FlyQueue::size() const
   return segments_.size();
 }
 
+std::size_t FlyQueue::max_points() const
+{
+  return max_points_;
+}
+
 bool FlyQueue::empty() const
 {
   return segments_.empty();

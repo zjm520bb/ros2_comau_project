@@ -1,0 +1,9 @@
+std_msgs/Header header
+string device_id
+string display_name
+string device_type
+string state
+bool ready
+bool fault
+string mode
+diagnostic_msgs/KeyValue[] values
