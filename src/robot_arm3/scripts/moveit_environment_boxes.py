@@ -15,9 +15,10 @@ from rclpy.node import Node
 from shape_msgs.msg import SolidPrimitive
 
 
-class BoxSpec(NamedTuple):
+class EnvironmentShapeSpec(NamedTuple):
     identifier: str
-    size: tuple[float, float, float]
+    primitive_type: int
+    dimensions: tuple[float, ...]
     pose: tuple[float, float, float, float, float, float, float]
 
 
@@ -92,7 +93,7 @@ def _compose_pose_chain(poses):
     return position + quaternion
 
 
-def _parse_sdf_box(sdf_file):
+def _parse_sdf_shape(sdf_file):
     root = ET.parse(sdf_file).getroot()
     model = root.find("model")
     if model is None:
@@ -104,15 +105,38 @@ def _parse_sdf_box(sdf_file):
             size_element = collision.find("geometry/box/size")
             if size_element is not None and size_element.text:
                 size = tuple(float(value) for value in size_element.text.split())
-                matches.append((link, collision, size))
+                matches.append((link, collision, SolidPrimitive.BOX, size))
+                continue
+            radius_element = collision.find("geometry/cylinder/radius")
+            length_element = collision.find("geometry/cylinder/length")
+            if (
+                radius_element is not None
+                and radius_element.text
+                and length_element is not None
+                and length_element.text
+            ):
+                radius = float(radius_element.text)
+                length = float(length_element.text)
+                matches.append(
+                    (
+                        link,
+                        collision,
+                        SolidPrimitive.CYLINDER,
+                        (length, radius),
+                    )
+                )
     if len(matches) != 1:
-        raise ValueError(f"Expected exactly one box collision in {sdf_file}")
+        raise ValueError(f"Expected exactly one supported collision shape in {sdf_file}")
 
-    link, collision, size = matches[0]
-    if len(size) != 3 or not all(math.isfinite(value) and value > 0.0 for value in size):
-        raise ValueError(f"Invalid box size in {sdf_file}")
+    link, collision, primitive_type, dimensions = matches[0]
+    expected_dimension_count = 3 if primitive_type == SolidPrimitive.BOX else 2
+    if (
+        len(dimensions) != expected_dimension_count
+        or not all(math.isfinite(value) and value > 0.0 for value in dimensions)
+    ):
+        raise ValueError(f"Invalid collision dimensions in {sdf_file}")
     local_poses = [_sdf_pose(model), _sdf_pose(link), _sdf_pose(collision)]
-    return size, local_poses
+    return primitive_type, dimensions, local_poses
 
 
 def load_environment(config_file, sdf_directory):
@@ -128,7 +152,7 @@ def load_environment(config_file, sdf_directory):
     if not math.isfinite(padding) or padding < 0.0:
         raise ValueError("planning_padding must be finite and non-negative")
 
-    boxes = []
+    shapes = []
     identifiers = set()
     for entry in config["boxes"]:
         identifier = str(entry.get("id", "")).strip()
@@ -139,11 +163,17 @@ def load_environment(config_file, sdf_directory):
         sdf_file = os.path.join(sdf_directory, str(entry.get("sdf", "")))
         if not os.path.isfile(sdf_file):
             raise FileNotFoundError(f"Bounding Box SDF was not found: {sdf_file}")
-        size, local_poses = _parse_sdf_box(sdf_file)
+        primitive_type, dimensions, local_poses = _parse_sdf_shape(sdf_file)
         pose = _compose_pose_chain([model_pose] + local_poses)
-        padded_size = tuple(value + 2.0 * padding for value in size)
-        boxes.append(BoxSpec(identifier, padded_size, pose))
-    return frame_id, padding, boxes
+        if primitive_type == SolidPrimitive.BOX:
+            padded_dimensions = tuple(value + 2.0 * padding for value in dimensions)
+        else:
+            length, radius = dimensions
+            padded_dimensions = (length + 2.0 * padding, radius + padding)
+        shapes.append(
+            EnvironmentShapeSpec(identifier, primitive_type, padded_dimensions, pose)
+        )
+    return frame_id, padding, shapes
 
 
 def collision_object(spec, frame_id):
@@ -151,8 +181,8 @@ def collision_object(spec, frame_id):
     collision.header.frame_id = frame_id
     collision.id = spec.identifier
     primitive = SolidPrimitive()
-    primitive.type = SolidPrimitive.BOX
-    primitive.dimensions = list(spec.size)
+    primitive.type = spec.primitive_type
+    primitive.dimensions = list(spec.dimensions)
     pose = Pose()
     pose.position.x, pose.position.y, pose.position.z = spec.pose[:3]
     (
