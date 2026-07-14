@@ -1,0 +1,11 @@
+string name
+uint32 path_id
+uint8 path_type
+arm_tcp_bridge_interfaces/PathFrame[] frames
+arm_tcp_bridge_interfaces/PathCondition[] conditions
+arm_tcp_bridge_interfaces/PathNode[] nodes
+uint32 start_index
+uint32 end_index
+float64[6] expected_start_deg
+float64[6] expected_end_deg
+bool wait_after

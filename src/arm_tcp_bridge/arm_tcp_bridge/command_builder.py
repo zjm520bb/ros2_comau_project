@@ -40,6 +40,26 @@ def hello() -> str:
     return "Hello"
 
 
+def get_pose() -> str:
+    return "getPose"
+
+
+def get_joints() -> str:
+    return "getJoints"
+
+
+def pause_motion() -> str:
+    return "pauseMotion"
+
+
+def resume_motion() -> str:
+    return "resumeMotion"
+
+
+def abort_motion() -> str:
+    return "abortMotion"
+
+
 def set_base(
     pose: Sequence[float],
 ) -> str:
@@ -270,6 +290,72 @@ def move_circular(
 
     return (
         f"moveCircular:{_format_values(values)}"
+    )
+
+
+def move_relative(
+    translation_mm: Sequence[float],
+    frame: int,
+) -> str:
+    values = _validate_finite(
+        translation_mm,
+        3,
+        "Relative translation",
+    )
+
+    if frame not in (0, 1, 2):
+        raise ValueError(
+            "Relative frame must be 0 (BASE), "
+            "1 (TOOL) or 2 (UFRAME)"
+        )
+
+    if all(value == 0.0 for value in values):
+        raise ValueError(
+            "Relative translation must not be zero"
+        )
+
+    return (
+        f"moveRelative:{_format_values(values)},"
+        f"{frame}"
+    )
+
+
+def move_about(
+    vector: Sequence[float],
+    angle_deg: float,
+    frame: int,
+) -> str:
+    values = _validate_finite(
+        vector,
+        3,
+        "ABOUT vector",
+    )
+    angle_deg = float(angle_deg)
+
+    if not math.isfinite(angle_deg):
+        raise ValueError(
+            "ABOUT angle must be finite"
+        )
+
+    if frame not in (0, 1, 2):
+        raise ValueError(
+            "ABOUT frame must be 0 (BASE), "
+            "1 (TOOL) or 2 (UFRAME)"
+        )
+
+    if all(value == 0.0 for value in values):
+        raise ValueError(
+            "ABOUT vector must not be zero"
+        )
+
+    if angle_deg == 0.0:
+        raise ValueError(
+            "ABOUT angle must not be zero"
+        )
+
+    return (
+        f"moveAbout:{_format_values(values)},"
+        f"{angle_deg:.6f},{frame}"
     )
 
 

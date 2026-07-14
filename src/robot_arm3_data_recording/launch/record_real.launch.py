@@ -42,6 +42,7 @@ def _launch_setup(context):
                 output_dir,
                 "--storage",
                 storage_id,
+                "--include-hidden-topics",
                 *topics,
             ],
             output="screen",

@@ -35,6 +35,22 @@ TEST(CommandParser, ParsesMoveLinear)
   EXPECT_DOUBLE_EQ(command.values[4], 90.0);
 }
 
+TEST(CommandParser, ParsesAutomaticObstacleAvoidanceMoves)
+{
+  const auto joint_command =
+      control::parse_command("moveJointAuto:0,-20,-90,0,45,-360");
+  EXPECT_EQ(joint_command.type, control::CommandType::MOVE_JOINT_AUTO);
+  ASSERT_EQ(joint_command.values.size(), 6u);
+  EXPECT_DOUBLE_EQ(joint_command.values[2], -90.0);
+
+  const auto pose_command =
+      control::parse_command("movePoseAuto:1000,0,1210,0,90,0");
+  EXPECT_EQ(pose_command.type, control::CommandType::MOVE_POSE_AUTO);
+  ASSERT_EQ(pose_command.values.size(), 6u);
+  EXPECT_DOUBLE_EQ(pose_command.values[0], 1000.0);
+  EXPECT_DOUBLE_EQ(pose_command.values[4], 90.0);
+}
+
 TEST(CommandParser, ParsesSpeedCommands)
 {
   EXPECT_DOUBLE_EQ(control::parse_command("setSpeedJnt:5").values.at(0), 5.0);
@@ -68,6 +84,21 @@ TEST(CommandParser, ParsesMoveCircular)
   EXPECT_DOUBLE_EQ(command.values.back(), 12.0);
 }
 
+TEST(CommandParser, ParsesRelativeAndAboutMoves)
+{
+  const auto relative = control::parse_command("moveRelative:1,2,3,0");
+  EXPECT_EQ(relative.type, control::CommandType::MOVE_RELATIVE);
+  ASSERT_EQ(relative.values.size(), 4u);
+  EXPECT_DOUBLE_EQ(relative.values[2], 3.0);
+  EXPECT_DOUBLE_EQ(relative.values[3], 0.0);
+
+  const auto about = control::parse_command("moveAbout:0,0,1,30,1");
+  EXPECT_EQ(about.type, control::CommandType::MOVE_ABOUT);
+  ASSERT_EQ(about.values.size(), 5u);
+  EXPECT_DOUBLE_EQ(about.values[3], 30.0);
+  EXPECT_DOUBLE_EQ(about.values[4], 1.0);
+}
+
 TEST(CommandParser, ParsesFlyCommands)
 {
   EXPECT_EQ(control::parse_command("setFlyCart:10,0,5").type, control::CommandType::SET_FLY_CART);
@@ -83,9 +114,13 @@ TEST(CommandParser, RejectsWrongParameterCount)
 {
   EXPECT_THROW(control::parse_command("moveJoint:1,2,3"), control::CommandParseError);
   EXPECT_THROW(control::parse_command("moveLin:1,2,3,4,5,6,7"), control::CommandParseError);
+  EXPECT_THROW(control::parse_command("moveJointAuto:1,2,3"), control::CommandParseError);
+  EXPECT_THROW(control::parse_command("movePoseAuto:1,2,3,4,5"), control::CommandParseError);
   EXPECT_THROW(control::parse_command("setJointOverrides:1,2,3"), control::CommandParseError);
   EXPECT_THROW(control::parse_command("setBase:1,2,3"), control::CommandParseError);
   EXPECT_THROW(control::parse_command("moveCircular:1,2,3,4,5,6"), control::CommandParseError);
+  EXPECT_THROW(control::parse_command("moveRelative:1,2,3"), control::CommandParseError);
+  EXPECT_THROW(control::parse_command("moveAbout:0,0,1,30"), control::CommandParseError);
   EXPECT_THROW(control::parse_command("setFlyCart:10,0"), control::CommandParseError);
   EXPECT_THROW(control::parse_command("addFlyJoint:1,2,3"), control::CommandParseError);
 }
@@ -94,5 +129,9 @@ TEST(CommandParser, RejectsInvalidNumbersAndCommands)
 {
   EXPECT_THROW(control::parse_command("moveJoint:1,2,nan,4,5,6"), control::CommandParseError);
   EXPECT_THROW(control::parse_command("moveLin:1,2,x,4,5,6"), control::CommandParseError);
+  EXPECT_THROW(control::parse_command("moveJointAuto:1,2,nan,4,5,6"), control::CommandParseError);
+  EXPECT_THROW(control::parse_command("movePoseAuto:1,2,x,4,5,6"), control::CommandParseError);
   EXPECT_THROW(control::parse_command("moveCircular:1,2,3"), control::CommandParseError);
+  EXPECT_THROW(control::parse_command("moveRelative:1,2,x,0"), control::CommandParseError);
+  EXPECT_THROW(control::parse_command("moveAbout:0,0,1,nan,1"), control::CommandParseError);
 }

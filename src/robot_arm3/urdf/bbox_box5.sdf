@@ -18,11 +18,11 @@
           </box>
         </geometry>
         <material>
-          <ambient>0.65 0.65 0.80 0.45</ambient>
-          <diffuse>0.65 0.65 0.80 0.45</diffuse>
+          <ambient>0.95 0.12 0.12 0.85</ambient>
+          <diffuse>0.95 0.12 0.12 0.85</diffuse>
           <specular>0.10 0.10 0.10 1.0</specular>
         </material>
-        <transparency>0.35</transparency>
+        <transparency>0.15</transparency>
       </visual>
     </link>
   </model>

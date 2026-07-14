@@ -1,0 +1,370 @@
+PROGRAM PDL2_ROS2_main_1 &PA, STACK = 5000, PROG_ARM = 1
+
+CONST
+  server_port   = 8000
+  buffer_length = 256
+
+  RESULT_OK          = 1
+  RESULT_UNAVAILABLE = 0
+  RESULT_ABORTED     = -3
+
+  PAUSE_EVENT  = 49301
+  RESUME_EVENT = 49302
+  ABORT_EVENT  = 49303
+
+  PATH_EVENT_START = 10
+  PATH_EVENT_END   = 11
+  PATH_EVENT_VIA   = 12
+
+  SETUP_STATE      = 0
+  IDLE_STATE       = 10
+  PERMISSION_STATE = 20
+  MOVEMENT_STATE   = 30
+  ERROR_STATE      = 90
+
+
+VAR
+  state   : INTEGER
+  command : STRING[buffer_length]
+  BR_PC   : INTEGER
+
+  current_joints : JOINTPOS
+  current_pose   : POSITION
+
+  pose_x  : REAL
+  pose_y  : REAL
+  pose_z  : REAL
+  pose_e1 : REAL
+  pose_e2 : REAL
+  pose_e3 : REAL
+
+  pose_cnfg : STRING[15]
+
+
+ROUTINE accept_client(PORT : INTEGER) : INTEGER EXPORTED FROM Connect_via_TCP_C4G_1
+
+ROUTINE disconnect_from(LUN : INTEGER) : INTEGER EXPORTED FROM Connect_via_TCP_C4G_1
+
+ROUTINE send_to_LUN(LUN : INTEGER; msg : STRING) : INTEGER EXPORTED FROM Connect_via_TCP_C4G_1
+
+ROUTINE read_from_LUN(LUN : INTEGER) : STRING EXPORTED FROM Connect_via_TCP_C4G_1
+
+
+ROUTINE call_service(command : STRING) : INTEGER EXPORTED FROM ROS2_MOVEMENTS_1
+
+ROUTINE request_abort EXPORTED FROM ROS2_MOVEMENTS_1
+
+ROUTINE reset_abort EXPORTED FROM ROS2_MOVEMENTS_1
+
+ROUTINE clear_fly_queue : INTEGER EXPORTED FROM ROS2_MOVEMENTS_1
+
+ROUTINE set_path_feedback_lun(lun : INTEGER) EXPORTED FROM ROS2_MOVEMENTS_1
+
+ROUTINE report_path_event(event_code : INTEGER) EXPORTED FROM ROS2_MOVEMENTS_1
+
+
+ROUTINE display(printable : STRING) : INTEGER
+BEGIN
+  WRITE LUN_CRT ( printable, NL )
+
+  WRITE LUN_TP ( printable, NL )
+
+  RETURN(0)
+END display
+
+
+ROUTINE safe_disconnect : INTEGER
+BEGIN
+  IF BR_PC <> 0 THEN
+    disconnect_from(BR_PC)
+    BR_PC := 0
+  ENDIF
+
+  RETURN(0)
+END safe_disconnect
+
+
+ROUTINE setup : BOOLEAN
+BEGIN
+  safe_disconnect
+
+  BR_PC := accept_client(server_port)
+
+  IF BR_PC = -1 THEN
+    RETURN(FALSE)
+  ELSE
+    set_path_feedback_lun(BR_PC)
+
+    display( '[MAIN] Client connected on port 8000' )
+
+    RETURN(TRUE)
+  ENDIF
+END setup
+
+
+ROUTINE get_command : STRING
+BEGIN
+  RETURN( read_from_LUN(BR_PC) )
+END get_command
+
+
+ROUTINE can_start(cmd : STRING) : INTEGER
+VAR
+  ans : STRING[buffer_length]
+BEGIN
+  send_to_LUN( BR_PC, cmd )
+
+  DELAY 50
+
+  ans := read_from_LUN(BR_PC)
+
+  IF ans = '' THEN
+    ans := read_from_LUN(BR_PC)
+  ENDIF
+
+  IF ans = 'start' THEN
+    RETURN(1)
+  ENDIF
+
+  RETURN(0)
+END can_start
+
+
+ROUTINE send_error
+BEGIN
+  send_to_LUN( BR_PC, 'ERROR' )
+END send_error
+
+
+ROUTINE send_unavailable
+BEGIN
+  send_to_LUN( BR_PC, 'Movement unavailable' )
+END send_unavailable
+
+
+ROUTINE send_finish
+BEGIN
+  send_to_LUN( BR_PC, 'Movement finished' )
+END send_finish
+
+
+ROUTINE send_aborted
+BEGIN
+  send_to_LUN( BR_PC, 'Motion aborted' )
+END send_aborted
+
+
+ROUTINE send_current_joints
+BEGIN
+  current_joints := ARM_JNTP(1)
+
+  WRITE BR_PC ( 'JOINTS:', current_joints[1], ',', current_joints[2], ',', current_joints[3], ',', current_joints[4], ',', current_joints[5], ',', current_joints[6] )
+
+  WRITE LUN_CRT ( '[MAIN] JOINTS:', current_joints[1], ',', current_joints[2], ',', current_joints[3], ',', current_joints[4], ',', current_joints[5], ',', current_joints[6], NL )
+END send_current_joints
+
+
+ROUTINE send_current_pose
+BEGIN
+  current_pose := ARM_POS(1)
+
+  POS_XTRT( current_pose, pose_x, pose_y, pose_z, pose_e1, pose_e2, pose_e3, pose_cnfg )
+
+  WRITE BR_PC ( 'POSE:', pose_x, ',', pose_y, ',', pose_z, ',', pose_e1, ',', pose_e2, ',', pose_e3 )
+
+  WRITE LUN_CRT ( '[MAIN] POSE:', pose_x, ',', pose_y, ',', pose_z, ',', pose_e1, ',', pose_e2, ',', pose_e3, NL )
+END send_current_pose
+
+
+BEGIN
+  BR_PC := 0
+  command := ''
+
+  pose_x := 0
+  pose_y := 0
+  pose_z := 0
+
+  pose_e1 := 0
+  pose_e2 := 0
+  pose_e3 := 0
+
+  pose_cnfg := ''
+
+  CONDITION[1] NODISABLE:
+    WHEN EVENT PAUSE_EVENT BY ANY DO
+      LOCK
+  ENDCONDITION
+
+  CONDITION[2] NODISABLE:
+    WHEN EVENT RESUME_EVENT BY ANY DO
+      UNLOCK
+      RESUME
+  ENDCONDITION
+
+  CONDITION[3] NODISABLE:
+    WHEN EVENT ABORT_EVENT BY ANY DO
+      request_abort
+  ENDCONDITION
+
+  CONDITION[PATH_EVENT_START] NODISABLE:
+    WHEN AT START DO
+      report_path_event(PATH_EVENT_START)
+  ENDCONDITION
+
+  CONDITION[PATH_EVENT_END] NODISABLE:
+    WHEN AT END DO
+      report_path_event(PATH_EVENT_END)
+  ENDCONDITION
+
+  CONDITION[PATH_EVENT_VIA] NODISABLE:
+    WHEN AT VIA DO
+      report_path_event(PATH_EVENT_VIA)
+  ENDCONDITION
+
+  ENABLE CONDITION[1], CONDITION[2], CONDITION[3]
+
+  display( '[MAIN] Motion control conditions enabled' )
+
+  display( '[MAIN] ROS2 server started on port 8000' )
+
+  state := SETUP_STATE
+
+  WHILE TRUE DO
+    DELAY 200
+
+    SELECT state OF
+
+      CASE (SETUP_STATE):
+
+        IF setup THEN
+          state := IDLE_STATE
+        ELSE
+          display( '[MAIN] Connection failed on port 8000' )
+
+          HOLD
+
+          state := SETUP_STATE
+        ENDIF
+
+
+      CASE (IDLE_STATE):
+
+        command := ''
+        command := get_command
+
+        IF command = '' THEN
+          state := IDLE_STATE
+        ELSE
+          display( '[MAIN] Command received' )
+
+          display(command)
+
+          state := PERMISSION_STATE
+        ENDIF
+
+
+      CASE (PERMISSION_STATE):
+
+        SELECT can_start(command) OF
+
+          CASE (1):
+
+            display( '[MAIN] Starting command' )
+
+            display(command)
+
+            state := MOVEMENT_STATE
+
+          ELSE:
+
+            display( '[MAIN] Start declined' )
+
+            state := IDLE_STATE
+
+        ENDSELECT
+
+
+      CASE (MOVEMENT_STATE):
+
+        IF command = 'getJoints' THEN
+
+          display( '[MAIN] Sending current joints' )
+
+          send_current_joints
+
+          state := IDLE_STATE
+
+        ELSE
+          IF command = 'getPose' THEN
+
+            display( '[MAIN] Sending current pose' )
+
+            send_current_pose
+
+            state := IDLE_STATE
+
+          ELSE
+
+            reset_abort
+
+            SELECT call_service(command) OF
+
+              CASE (RESULT_OK):
+
+                display( '[MAIN] Movement done' )
+
+                send_finish
+                state := IDLE_STATE
+
+
+              CASE (RESULT_UNAVAILABLE):
+
+                display( '[MAIN] Movement unavailable' )
+
+                send_unavailable
+                state := IDLE_STATE
+
+
+              CASE (RESULT_ABORTED):
+
+                display( '[MAIN] Motion aborted' )
+
+                clear_fly_queue
+                send_aborted
+
+                state := IDLE_STATE
+
+
+              ELSE:
+
+                display( '[MAIN] Error during movement' )
+
+                send_error
+                state := ERROR_STATE
+
+            ENDSELECT
+
+          ENDIF
+        ENDIF
+
+
+      CASE (ERROR_STATE):
+
+        display( '[MAIN] Error state. HOLD' )
+
+        HOLD
+
+        state := IDLE_STATE
+
+
+      ELSE:
+
+        display( '[MAIN] Unknown state. Reset' )
+
+        safe_disconnect
+
+        state := SETUP_STATE
+
+    ENDSELECT
+  ENDWHILE
+END PDL2_ROS2_main_1

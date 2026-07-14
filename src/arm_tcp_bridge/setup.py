@@ -60,8 +60,28 @@ setup(
                 "arm_tcp_bridge.joint_feedback_node:main"
             ),
             (
+                "motion_control_node = "
+                "arm_tcp_bridge.motion_control_node:main"
+            ),
+            (
                 "send_fly_queue_template = "
                 "arm_tcp_bridge.fly_queue_sender_template:main"
+            ),
+            (
+                "send_path_template = "
+                "arm_tcp_bridge.path_sender_template:main"
+            ),
+            (
+                "path_sequence_server = "
+                "arm_tcp_bridge.path_sequence_action_server:main"
+            ),
+            (
+                "send_path_sequence = "
+                "arm_tcp_bridge.path_sequence_sender:main"
+            ),
+            (
+                "offline_sequence_manager = "
+                "arm_tcp_bridge.offline_sequence_manager:main"
             ),
         ],
     },

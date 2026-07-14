@@ -614,5 +614,20 @@
       <parameters>$(arg controller_config)</parameters>
       <position_proportional_gain>1000.0</position_proportional_gain>
     </plugin>
+    <plugin
+      filename="librobot_arm3_joint_reset_system.so"
+      name="robot_arm3::JointResetSystem">
+      <reset_service>/gazebo/reset_robot_joints</reset_service>
+      <!-- PATH editing keeps the paused reset above.  C4G teleport uses
+           this separate PreUpdate-only service and never pauses the World. -->
+      <mirror_reset_service>/gazebo/reset_robot_joints_for_mirror</mirror_reset_service>
+      <controller_switch_service>/controller_manager/switch_controller</controller_switch_service>
+      <controller_list_service>/controller_manager/list_controllers</controller_list_service>
+      <trajectory_controller>arm_controller</trajectory_controller>
+      <passive_controller>internal_passive_controller</passive_controller>
+      <reset_apply_tolerance>0.001</reset_apply_tolerance>
+      <reset_settle_duration_s>0.1</reset_settle_duration_s>
+      <reset_verify_timeout_s>1.0</reset_verify_timeout_s>
+    </plugin>
   </gazebo>
 </robot>

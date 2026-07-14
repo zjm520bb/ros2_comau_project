@@ -1,0 +1,12 @@
+---
+bool recording
+bool draft_pending
+uint32 accepted_paths
+bool motion_active
+bool preview_active
+bool send_active
+bool can_stop_recording
+bool can_preview
+bool can_export
+bool can_send
+string message

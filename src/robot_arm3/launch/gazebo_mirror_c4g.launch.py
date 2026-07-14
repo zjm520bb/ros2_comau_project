@@ -35,13 +35,24 @@ def generate_launch_description():
 
     robot_ip = LaunchConfiguration("robot_ip")
     cmd_port = LaunchConfiguration("cmd_port")
+    control_port = LaunchConfiguration("control_port")
     feedback_port = LaunchConfiguration("feedback_port")
+    enable_motion_control = LaunchConfiguration(
+        "enable_motion_control"
+    )
+    enable_path_protocol = LaunchConfiguration(
+        "enable_path_protocol"
+    )
+    c4g_protocol_version = LaunchConfiguration(
+        "c4g_protocol_version"
+    )
     c4g_joint_states_topic = LaunchConfiguration(
         "c4g_joint_states_topic"
     )
     start_arm_tcp_bridge = LaunchConfiguration(
         "start_arm_tcp_bridge"
     )
+    initial_sync_mode = LaunchConfiguration("initial_sync_mode")
 
     robot_description = ParameterValue(
         Command(
@@ -79,7 +90,11 @@ def generate_launch_description():
         launch_arguments={
             "robot_ip": robot_ip,
             "cmd_port": cmd_port,
+            "control_port": control_port,
             "feedback_port": feedback_port,
+            "enable_motion_control": enable_motion_control,
+            "enable_path_protocol": enable_path_protocol,
+            "c4g_protocol_version": c4g_protocol_version,
             "joint_state_topic": c4g_joint_states_topic,
         }.items(),
         condition=IfCondition(start_arm_tcp_bridge),
@@ -177,11 +192,49 @@ def generate_launch_description():
                 "c4g_joint_states_topic": c4g_joint_states_topic,
                 "gazebo_joint_states_topic": "/joint_states",
                 "trajectory_topic": "/arm_controller/joint_trajectory",
-                "startup_delay_s": 3.5,
+                "startup_delay_s": 0.5,
+                "initial_gazebo_positions": [
+                    0.0,
+                    0.0,
+                    -1.5708,
+                    0.0,
+                    0.0,
+                    0.0,
+                ],
+                "initial_pose_tolerance_rad": 0.01,
+                "initial_pose_stable_duration_s": 0.5,
+                "initial_pose_timeout_s": 15.0,
+                "initial_sync_mode": initial_sync_mode,
+                "mirror_joint_reset_service": (
+                    "/gazebo/reset_robot_joints_for_mirror"
+                ),
+                "passive_command_topic": (
+                    "/internal_passive_controller/commands"
+                ),
+                "passive_solver_enable_service": (
+                    "/gazebo_passive_joint_controller_06/set_enabled"
+                ),
+                "require_passive_solver_handover": True,
+                "active_joint_lower_limits": [
+                    -3.14, -1.3, -4.0317, -47.12, -2.18, -47.12,
+                ],
+                "active_joint_upper_limits": [
+                    3.14, 1.3, 0.0, 47.12, 2.18, 47.12,
+                ],
+                "passive_joint_lower_limits": [-3.14, -3.14],
+                "passive_joint_upper_limits": [3.14, 3.14],
+                "teleport_limit_tolerance_rad": 0.001,
+                "joint_reset_timeout_s": 20.0,
+                "reset_tolerance_rad": 0.01,
+                "reset_velocity_tolerance_rad_s": 0.02,
+                "reset_stable_duration_s": 0.2,
+                "coupling_offset": 1.5708,
                 "blend_duration_s": 2.0,
                 "live_time_from_start_s": 0.08,
                 "feedback_timeout_s": 0.5,
                 "command_publish_rate_hz": 30.0,
+                "live_log_change_threshold_rad": 0.001,
+                "live_log_heartbeat_s": 20.0,
                 "joint_names": [
                     "joint_1",
                     "joint_2",
@@ -189,6 +242,10 @@ def generate_launch_description():
                     "joint_4",
                     "joint_5",
                     "joint_6",
+                ],
+                "passive_joint_names": [
+                    "joint_7",
+                    "joint_8",
                 ],
                 "signs": [
                     1.0,
@@ -251,9 +308,37 @@ def generate_launch_description():
                 description="C4G motion-command TCP port",
             ),
             DeclareLaunchArgument(
+                "control_port",
+                default_value="8002",
+                description="C4G pause/resume/abort TCP port",
+            ),
+            DeclareLaunchArgument(
                 "feedback_port",
                 default_value="8001",
                 description="C4G joint-feedback TCP port",
+            ),
+            DeclareLaunchArgument(
+                "enable_motion_control",
+                default_value="true",
+                description=(
+                    "Enable pause/resume/abort and PATH node-wait "
+                    "control services."
+                ),
+            ),
+            DeclareLaunchArgument(
+                "enable_path_protocol",
+                default_value="true",
+                description=(
+                    "Enable C4G PATH upload and PATH sequence execution."
+                ),
+            ),
+            DeclareLaunchArgument(
+                "c4g_protocol_version",
+                default_value="2",
+                description=(
+                    "Use 2 only after deploying the PATH-capable "
+                    "C4G PDL programs."
+                ),
             ),
             DeclareLaunchArgument(
                 "c4g_joint_states_topic",
@@ -266,6 +351,15 @@ def generate_launch_description():
                 description=(
                     "Start arm_tcp_bridge for real C4G command and "
                     "feedback."
+                ),
+            ),
+            DeclareLaunchArgument(
+                "initial_sync_mode",
+                default_value="blend",
+                description=(
+                    "Initial Gazebo synchronization: blend uses a trajectory "
+                    "transition by default; explicitly select teleport for "
+                    "an instantaneous joint reset."
                 ),
             ),
             AppendEnvironmentVariable(

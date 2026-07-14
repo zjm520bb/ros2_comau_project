@@ -1,0 +1,1778 @@
+PROGRAM ROS2_MOVEMENTS_1 DETACH, PROG_ARM = 1
+
+TYPE
+  ROS_CART_PATH_NODE = NODEDEF
+    $MAIN_POS
+    $MOVE_TYPE
+    $LIN_SPD
+    $ROT_SPD
+    $SEG_OVR
+    $SEG_TERM_TYPE
+    $SEG_TOL
+    $SEG_DATA
+    $SEG_FLY
+    $SEG_FLY_TYPE
+    $SEG_FLY_PER
+    $SEG_FLY_DIST
+    $SEG_FLY_TRAJ
+    $SEG_STRESS_PER
+    $SEG_REF_IDX
+    $SEG_TOOL_IDX
+    $COND_MASK
+    $COND_MASK_BACK
+    $SEG_WAIT
+  ENDNODEDEF
+
+  ROS_JOINT_PATH_NODE = NODEDEF
+    $MAIN_JNTP
+    $MOVE_TYPE
+    $SEG_OVR
+    $SEG_TERM_TYPE
+    $SEG_TOL
+    $SEG_DATA
+    $SEG_FLY
+    $SEG_FLY_TYPE
+    $SEG_FLY_PER
+    $COND_MASK
+    $COND_MASK_BACK
+    $SEG_WAIT
+  ENDNODEDEF
+
+CONST
+  paramlength = 64
+  max_fly_points = 20
+
+  RESULT_OK             = 1
+  RESULT_UNAVAILABLE    = 0
+  RESULT_UNKNOWN_ACTION = -1
+  RESULT_PARSE_ERROR    = -2
+  RESULT_ABORTED        = -3
+
+  QUEUE_NONE  = 0
+  QUEUE_CART  = 1
+  QUEUE_JOINT = 2
+
+  SEG_NONE     = 0
+  SEG_LINEAR   = 1
+  SEG_CIRCULAR = 2
+
+  FRAME_BASE   = 0
+  FRAME_TOOL   = 1
+  FRAME_UFRAME = 2
+
+  PATH_CART  = 0
+  PATH_JOINT = 1
+
+  PATH_EMPTY     = 0
+  PATH_UPLOADING = 1
+  PATH_READY     = 2
+  PATH_EXECUTING = 3
+  PATH_WAITING   = 4
+  PATH_DONE      = 5
+  PATH_ABORTED   = 6
+
+  PATH_EVENT_START = 10
+  PATH_EVENT_END   = 11
+  PATH_EVENT_VIA   = 12
+
+
+VAR
+  parse_ok : BOOLEAN
+
+  fly_queue_type  : INTEGER
+  fly_queue_count : INTEGER
+
+  motion_aborted : BOOLEAN
+
+  fly_segment_type : ARRAY[max_fly_points] OF INTEGER
+  fly_target_queue : ARRAY[max_fly_points] OF POSITION
+  fly_via_queue    : ARRAY[max_fly_points] OF POSITION
+  fly_jnt_queue    : ARRAY[max_fly_points] OF JOINTPOS
+
+  cart_path  : PATH OF ROS_CART_PATH_NODE
+  joint_path : PATH OF ROS_JOINT_PATH_NODE
+
+  path_upload_active : BOOLEAN
+  path_node_pending  : BOOLEAN
+  path_is_waiting    : BOOLEAN
+
+  active_path_id       : INTEGER
+  active_path_type     : INTEGER
+  expected_path_nodes  : INTEGER
+  committed_path_nodes : INTEGER
+  pending_path_node    : INTEGER
+  path_start_index     : INTEGER
+  path_end_index       : INTEGER
+  path_current_node    : INTEGER
+  path_state           : INTEGER
+  path_feedback_lun    : INTEGER
+
+  path_target_set : BOOLEAN
+  path_motion_set : BOOLEAN
+  path_blend_set  : BOOLEAN
+  path_sync_set   : BOOLEAN
+
+
+ROUTINE call_service(command : STRING) : INTEGER EXPORTED FROM ROS2_MOVEMENTS_1
+ROUTINE request_abort EXPORTED FROM ROS2_MOVEMENTS_1
+ROUTINE reset_abort EXPORTED FROM ROS2_MOVEMENTS_1
+ROUTINE clear_fly_queue : INTEGER EXPORTED FROM ROS2_MOVEMENTS_1
+ROUTINE signal_path_segment(path_id, expected_node : INTEGER) : INTEGER EXPORTED FROM ROS2_MOVEMENTS_1
+ROUTINE get_path_id : INTEGER EXPORTED FROM ROS2_MOVEMENTS_1
+ROUTINE get_path_node : INTEGER EXPORTED FROM ROS2_MOVEMENTS_1
+ROUTINE get_path_state : INTEGER EXPORTED FROM ROS2_MOVEMENTS_1
+ROUTINE get_path_waiting : INTEGER EXPORTED FROM ROS2_MOVEMENTS_1
+ROUTINE set_path_feedback_lun(lun : INTEGER) EXPORTED FROM ROS2_MOVEMENTS_1
+ROUTINE report_path_event(event_code : INTEGER) EXPORTED FROM ROS2_MOVEMENTS_1
+
+
+ROUTINE request_abort
+VAR
+  release_path_wait : BOOLEAN
+BEGIN
+  release_path_wait := path_is_waiting
+  motion_aborted := TRUE
+  fly_queue_type := QUEUE_NONE
+  fly_queue_count := 0
+  path_upload_active := FALSE
+  path_node_pending := FALSE
+  path_state := PATH_ABORTED
+
+  IF release_path_wait THEN
+    IF active_path_type = PATH_CART THEN
+      SIGNAL SEGMENT cart_path
+    ELSE
+      SIGNAL SEGMENT joint_path
+    ENDIF
+  ENDIF
+
+  CANCEL ALL
+  path_is_waiting := FALSE
+
+  WRITE LUN_CRT ( '[MOV] Abort requested. Queues stopped', NL )
+END request_abort
+
+
+ROUTINE reset_abort
+BEGIN
+  motion_aborted := FALSE
+END reset_abort
+
+
+ROUTINE check_aborted : BOOLEAN
+BEGIN
+  IF motion_aborted THEN
+    RETURN(TRUE)
+  ENDIF
+
+  RETURN(FALSE)
+END check_aborted
+
+
+ROUTINE str_2_real(str : STRING) : REAL
+VAR
+  len         : INTEGER
+  i           : INTEGER
+  cur         : INTEGER
+  decimal_div : REAL
+  real_num    : REAL
+  negative    : BOOLEAN
+  dot_found   : BOOLEAN
+  digit_found : BOOLEAN
+BEGIN
+  parse_ok := FALSE
+  real_num := 0
+  decimal_div := 1
+  negative := FALSE
+  dot_found := FALSE
+  digit_found := FALSE
+
+  len := STR_LEN(str)
+
+  IF len = 0 THEN
+    RETURN(0)
+  ENDIF
+
+  i := 1
+
+  IF ORD(str, 1) = 45 THEN
+    negative := TRUE
+    i := 2
+
+    IF len = 1 THEN
+      RETURN(0)
+    ENDIF
+  ENDIF
+
+  WHILE i <= len DO
+    cur := ORD(str, i)
+
+    IF cur = 46 THEN
+      IF dot_found THEN
+        RETURN(0)
+      ENDIF
+
+      dot_found := TRUE
+    ELSE
+      IF (cur < 48) OR (cur > 57) THEN
+        RETURN(0)
+      ENDIF
+
+      digit_found := TRUE
+
+      IF NOT dot_found THEN
+        real_num := real_num * 10 + cur - 48
+      ELSE
+        decimal_div := decimal_div * 10
+        real_num := real_num + (cur - 48) / decimal_div
+      ENDIF
+    ENDIF
+
+    i := i + 1
+  ENDWHILE
+
+  IF NOT digit_found THEN
+    RETURN(0)
+  ENDIF
+
+  IF negative THEN
+    real_num := -real_num
+  ENDIF
+
+  parse_ok := TRUE
+
+  RETURN(real_num)
+END str_2_real
+
+
+ROUTINE get_command(command, action : STRING)
+VAR
+  delim : INTEGER
+BEGIN
+  action := ''
+  delim := STR_LOC(command, ':')
+
+  IF delim <> 0 THEN
+    STR_XTRT( command, 1, delim - 1, action )
+  ELSE
+    action := command
+  ENDIF
+END get_command
+
+
+ROUTINE get_parameter(command : STRING; param : ARRAY[*] OF REAL) : INTEGER
+VAR
+  delim : INTEGER
+  x     : INTEGER
+  coord : STRING[25]
+  val   : REAL
+BEGIN
+  delim := STR_LOC(command, ':')
+
+  IF delim = 0 THEN
+    RETURN(0)
+  ENDIF
+
+  STR_DEL(command, 1, delim)
+
+  IF STR_LEN(command) = 0 THEN
+    RETURN(0)
+  ENDIF
+
+  FOR x := 1 TO paramlength DO
+    coord := ''
+
+    IF STR_LEN(command) = 0 THEN
+      RETURN(x - 1)
+    ENDIF
+
+    delim := STR_LOC(command, ',')
+
+    IF delim <> 0 THEN
+      IF delim = 1 THEN
+        WRITE LUN_CRT ( '[MOV] Empty parameter at index ', x, NL )
+
+        RETURN(-1)
+      ENDIF
+
+      STR_XTRT( command, 1, delim - 1, coord )
+
+      STR_DEL( command, 1, delim )
+    ELSE
+      STR_XTRT( command, 1, STR_LEN(command), coord )
+
+      STR_DEL( command, 1, STR_LEN(command) )
+    ENDIF
+
+    val := str_2_real(coord)
+
+    IF NOT parse_ok THEN
+      WRITE LUN_CRT ( '[MOV] Parse error at parameter ', x, NL )
+
+      WRITE LUN_TP ( '[MOV] Parameter parse error', NL )
+
+      RETURN(-1)
+    ENDIF
+
+    param[x] := val
+  ENDFOR
+
+  IF STR_LEN(command) <> 0 THEN
+    WRITE LUN_CRT ( '[MOV] Too many parameters', NL )
+
+    RETURN(-2)
+  ENDIF
+
+  RETURN(paramlength)
+END get_parameter
+
+
+ROUTINE check_par_num(actual_num, required_num : INTEGER) : BOOLEAN
+BEGIN
+  IF actual_num = required_num THEN
+    RETURN(TRUE)
+  ENDIF
+
+  WRITE LUN_CRT ( '[MOV] Wrong parameter number. Expected=', required_num, ' Received=', actual_num, NL )
+
+  RETURN(FALSE)
+END check_par_num
+
+
+ROUTINE set_base_to(p1, p2, p3, p4, p5, p6 : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 6) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  $BASE := POS(p1, p2, p3, p4, p5, p6)
+
+  WRITE LUN_CRT ('[MOV] BASE updated', NL)
+
+  RETURN(RESULT_OK)
+END set_base_to
+
+
+ROUTINE set_tool_to(p1, p2, p3, p4, p5, p6 : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 6) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  $TOOL := POS(p1, p2, p3, p4, p5, p6)
+
+  WRITE LUN_CRT ('[MOV] TOOL updated', NL)
+
+  RETURN(RESULT_OK)
+END set_tool_to
+
+
+ROUTINE set_uframe_to(p1, p2, p3, p4, p5, p6 : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 6) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  $UFRAME := POS(p1, p2, p3, p4, p5, p6)
+
+  WRITE LUN_CRT ('[MOV] UFRAME updated', NL)
+
+  RETURN(RESULT_OK)
+END set_uframe_to
+
+
+ROUTINE set_speed_linear_to(speed : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 1) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF speed <= 0 THEN
+    WRITE LUN_CRT ( '[MOV] Linear speed must be greater than zero', NL )
+
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  $SPD_OPT := SPD_LIN
+  $LIN_SPD := speed
+
+  WRITE LUN_CRT ( '[MOV] LIN_SPD set to ', speed, NL )
+
+  RETURN(RESULT_OK)
+END set_speed_linear_to
+
+
+ROUTINE set_speed_joint_to(speed_per : REAL; paramnumber : INTEGER) : INTEGER
+VAR
+  speed_value : INTEGER
+  i           : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 1) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (speed_per < 1) OR (speed_per > 100) THEN
+    WRITE LUN_CRT ( '[MOV] Joint override must be 1..100', NL )
+
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  speed_value := ROUND(speed_per)
+
+  FOR i := 1 TO 6 DO
+    $ARM_DATA[1].JNT_OVR[i] := speed_value
+  ENDFOR
+
+  WRITE LUN_CRT ( '[MOV] Joint override set to ', speed_value, NL )
+
+  RETURN(RESULT_OK)
+END set_speed_joint_to
+
+
+ROUTINE set_joint_overrides(p1, p2, p3, p4, p5, p6 : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 6) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (p1 < 1) OR (p1 > 100) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (p2 < 1) OR (p2 > 100) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (p3 < 1) OR (p3 > 100) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (p4 < 1) OR (p4 > 100) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (p5 < 1) OR (p5 > 100) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (p6 < 1) OR (p6 > 100) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  $ARM_DATA[1].JNT_OVR[1] := ROUND(p1)
+  $ARM_DATA[1].JNT_OVR[2] := ROUND(p2)
+  $ARM_DATA[1].JNT_OVR[3] := ROUND(p3)
+  $ARM_DATA[1].JNT_OVR[4] := ROUND(p4)
+  $ARM_DATA[1].JNT_OVR[5] := ROUND(p5)
+  $ARM_DATA[1].JNT_OVR[6] := ROUND(p6)
+
+  WRITE LUN_CRT ( '[MOV] Individual joint overrides updated', NL )
+
+  RETURN(RESULT_OK)
+END set_joint_overrides
+
+
+ROUTINE set_acceleration_to(value : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 1) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (value < 1) OR (value > 100) THEN
+    WRITE LUN_CRT ( '[MOV] ACC override must be 1..100', NL )
+
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  $PROG_ACC_OVR := ROUND(value)
+
+  WRITE LUN_CRT ( '[MOV] PROG_ACC_OVR set to ', value, NL )
+
+  RETURN(RESULT_OK)
+END set_acceleration_to
+
+
+ROUTINE set_deceleration_to(value : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 1) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (value < 1) OR (value > 100) THEN
+    WRITE LUN_CRT ( '[MOV] DEC override must be 1..100', NL )
+
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  $PROG_DEC_OVR := ROUND(value)
+
+  WRITE LUN_CRT ( '[MOV] PROG_DEC_OVR set to ', value, NL )
+
+  RETURN(RESULT_OK)
+END set_deceleration_to
+
+
+ROUTINE set_orientation_to(mode : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 1) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF mode = 0 THEN
+    $ORNT_TYPE := RS_WORLD
+    RETURN(RESULT_OK)
+  ENDIF
+
+  IF mode = 1 THEN
+    $ORNT_TYPE := RS_TRAJ
+    RETURN(RESULT_OK)
+  ENDIF
+
+  IF mode = 2 THEN
+    $ORNT_TYPE := EUL_WORLD
+    RETURN(RESULT_OK)
+  ENDIF
+
+  IF mode = 3 THEN
+    $ORNT_TYPE := WRIST_JNT
+    RETURN(RESULT_OK)
+  ENDIF
+
+  WRITE LUN_CRT ( '[MOV] Invalid orientation mode', NL )
+
+  RETURN(RESULT_UNAVAILABLE)
+END set_orientation_to
+
+
+ROUTINE set_termination_to(mode : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 1) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF mode = 0 THEN
+    $TERM_TYPE := COARSE
+    RETURN(RESULT_OK)
+  ENDIF
+
+  IF mode = 1 THEN
+    $TERM_TYPE := FINE
+    RETURN(RESULT_OK)
+  ENDIF
+
+  IF mode = 2 THEN
+    $TERM_TYPE := JNT_COARSE
+    RETURN(RESULT_OK)
+  ENDIF
+
+  IF mode = 3 THEN
+    $TERM_TYPE := JNT_FINE
+    RETURN(RESULT_OK)
+  ENDIF
+
+  IF mode = 4 THEN
+    $TERM_TYPE := NOSETTLE
+    RETURN(RESULT_OK)
+  ENDIF
+
+  WRITE LUN_CRT ( '[MOV] Invalid termination mode', NL )
+
+  RETURN(RESULT_UNAVAILABLE)
+END set_termination_to
+
+
+ROUTINE set_fly_norm_to(fly_per : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 1) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (fly_per < 1) OR (fly_per > 100) THEN
+    WRITE LUN_CRT ( '[MOV] FLY_PER must be 1..100', NL )
+
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  $FLY_TYPE := FLY_NORM
+  $FLY_PER := ROUND(fly_per)
+
+  WRITE LUN_CRT ( '[MOV] FLY_NORM configured. FLY_PER=', fly_per, NL )
+
+  RETURN(RESULT_OK)
+END set_fly_norm_to
+
+
+ROUTINE set_fly_cart_to(stress_per, traj_mode, fly_dist : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 3) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (stress_per < 1) OR (stress_per > 100) THEN
+    WRITE LUN_CRT ( '[MOV] STRESS_PER must be 1..100', NL )
+
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF fly_dist < 0 THEN
+    WRITE LUN_CRT ( '[MOV] FLY_DIST must be greater than or equal to zero', NL )
+
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  $FLY_TYPE := FLY_CART
+  $SPD_OPT := SPD_LIN
+  $STRESS_PER := ROUND(stress_per)
+  $FLY_DIST := fly_dist
+
+  IF traj_mode = 0 THEN
+    $FLY_TRAJ := FLY_AUTO
+  ELSE
+    IF traj_mode = 1 THEN
+      $FLY_TRAJ := FLY_TOL
+    ELSE
+      IF traj_mode = 2 THEN
+        $FLY_TRAJ := FLY_PASS
+      ELSE
+        IF traj_mode = 3 THEN
+          $FLY_TRAJ := FLY_FROM
+        ELSE
+          WRITE LUN_CRT ( '[MOV] Invalid FLY_TRAJ mode', NL )
+
+          RETURN(RESULT_UNAVAILABLE)
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+
+  WRITE LUN_CRT ( '[MOV] FLY_CART configured', NL )
+
+  RETURN(RESULT_OK)
+END set_fly_cart_to
+
+
+ROUTINE move_joint_to(p1, p2, p3, p4, p5, p6 : REAL; paramnumber : INTEGER) : INTEGER
+VAR
+  target : JOINTPOS
+BEGIN
+  IF NOT check_par_num(paramnumber, 6) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF check_aborted THEN
+    RETURN(RESULT_ABORTED)
+  ENDIF
+
+  target[1] := p1
+  target[2] := p2
+  target[3] := p3
+  target[4] := p4
+  target[5] := p5
+  target[6] := p6
+
+  MOVE JOINT TO target
+
+  IF check_aborted THEN
+    RETURN(RESULT_ABORTED)
+  ENDIF
+
+  RETURN(RESULT_OK)
+END move_joint_to
+
+
+ROUTINE move_linear_to(p1, p2, p3, p4, p5, p6 : REAL; paramnumber : INTEGER) : INTEGER
+VAR
+  target : POSITION
+BEGIN
+  IF NOT check_par_num(paramnumber, 6) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF check_aborted THEN
+    RETURN(RESULT_ABORTED)
+  ENDIF
+
+  target := POS(p1, p2, p3, p4, p5, p6)
+
+  MOVE LINEAR TO target
+
+  IF check_aborted THEN
+    RETURN(RESULT_ABORTED)
+  ENDIF
+
+  RETURN(RESULT_OK)
+END move_linear_to
+
+
+ROUTINE move_circular_to(v1, v2, v3, v4, v5, v6 : REAL; p1, p2, p3, p4, p5, p6 : REAL; paramnumber : INTEGER) : INTEGER
+VAR
+  via_pos    : POSITION
+  target_pos : POSITION
+BEGIN
+  IF NOT check_par_num(paramnumber, 12) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF check_aborted THEN
+    RETURN(RESULT_ABORTED)
+  ENDIF
+
+  via_pos := POS(v1, v2, v3, v4, v5, v6)
+  target_pos := POS(p1, p2, p3, p4, p5, p6)
+
+  MOVE CIRCULAR TO target_pos VIA via_pos
+
+  IF check_aborted THEN
+    RETURN(RESULT_ABORTED)
+  ENDIF
+
+  RETURN(RESULT_OK)
+END move_circular_to
+
+
+ROUTINE move_relative_to(dx, dy, dz, frame_mode : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 4) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF check_aborted THEN
+    RETURN(RESULT_ABORTED)
+  ENDIF
+
+  IF (dx = 0) AND (dy = 0) AND (dz = 0) THEN
+    WRITE LUN_CRT ( '[MOV] RELATIVE vector must not be zero', NL )
+
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF frame_mode = FRAME_BASE THEN
+    MOVE RELATIVE VEC(dx, dy, dz) IN BASE
+  ELSE
+    IF frame_mode = FRAME_TOOL THEN
+      MOVE RELATIVE VEC(dx, dy, dz) IN TOOL
+    ELSE
+      IF frame_mode = FRAME_UFRAME THEN
+        MOVE RELATIVE VEC(dx, dy, dz) IN UFRAME
+      ELSE
+        WRITE LUN_CRT ( '[MOV] Invalid RELATIVE frame. Use 0,1,2', NL )
+
+        RETURN(RESULT_UNAVAILABLE)
+      ENDIF
+    ENDIF
+  ENDIF
+
+  IF check_aborted THEN
+    RETURN(RESULT_ABORTED)
+  ENDIF
+
+  RETURN(RESULT_OK)
+END move_relative_to
+
+
+ROUTINE move_about_to(vx, vy, vz, angle, frame_mode : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 5) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF check_aborted THEN
+    RETURN(RESULT_ABORTED)
+  ENDIF
+
+  IF (vx = 0) AND (vy = 0) AND (vz = 0) THEN
+    WRITE LUN_CRT ( '[MOV] ABOUT vector must not be zero', NL )
+
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF angle = 0 THEN
+    WRITE LUN_CRT ( '[MOV] ABOUT angle must not be zero', NL )
+
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF frame_mode = FRAME_BASE THEN
+    MOVE ABOUT VEC(vx, vy, vz) BY angle IN BASE
+  ELSE
+    IF frame_mode = FRAME_TOOL THEN
+      MOVE ABOUT VEC(vx, vy, vz) BY angle IN TOOL
+    ELSE
+      IF frame_mode = FRAME_UFRAME THEN
+        MOVE ABOUT VEC(vx, vy, vz) BY angle IN UFRAME
+      ELSE
+        WRITE LUN_CRT ( '[MOV] Invalid ABOUT frame. Use 0,1,2', NL )
+
+        RETURN(RESULT_UNAVAILABLE)
+      ENDIF
+    ENDIF
+  ENDIF
+
+  IF check_aborted THEN
+    RETURN(RESULT_ABORTED)
+  ENDIF
+
+  RETURN(RESULT_OK)
+END move_about_to
+
+
+ROUTINE clear_fly_queue : INTEGER
+BEGIN
+  fly_queue_type := QUEUE_NONE
+  fly_queue_count := 0
+
+  WRITE LUN_CRT ( '[MOV] FLY queue cleared', NL )
+
+  RETURN(RESULT_OK)
+END clear_fly_queue
+
+
+ROUTINE add_fly_linear(p1, p2, p3, p4, p5, p6 : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 6) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF fly_queue_count >= max_fly_points THEN
+    WRITE LUN_CRT ( '[MOV] FLY queue is full', NL )
+
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF fly_queue_type = QUEUE_NONE THEN
+    fly_queue_type := QUEUE_CART
+  ENDIF
+
+  IF fly_queue_type <> QUEUE_CART THEN
+    WRITE LUN_CRT ( '[MOV] Cannot mix CART and JOINT queue', NL )
+
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  fly_queue_count := fly_queue_count + 1
+
+  fly_segment_type[fly_queue_count] := SEG_LINEAR
+  fly_target_queue[fly_queue_count] := POS(p1, p2, p3, p4, p5, p6)
+
+  WRITE LUN_CRT ( '[MOV] LINEAR segment added. Count=', fly_queue_count, NL )
+
+  RETURN(RESULT_OK)
+END add_fly_linear
+
+
+ROUTINE add_fly_circular(v1, v2, v3, v4, v5, v6 : REAL; p1, p2, p3, p4, p5, p6 : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 12) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF fly_queue_count >= max_fly_points THEN
+    WRITE LUN_CRT ( '[MOV] FLY queue is full', NL )
+
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF fly_queue_type = QUEUE_NONE THEN
+    fly_queue_type := QUEUE_CART
+  ENDIF
+
+  IF fly_queue_type <> QUEUE_CART THEN
+    WRITE LUN_CRT ( '[MOV] Cannot mix CART and JOINT queue', NL )
+
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  fly_queue_count := fly_queue_count + 1
+
+  fly_segment_type[fly_queue_count] := SEG_CIRCULAR
+
+  fly_via_queue[fly_queue_count] := POS(v1, v2, v3, v4, v5, v6)
+
+  fly_target_queue[fly_queue_count] := POS(p1, p2, p3, p4, p5, p6)
+
+  WRITE LUN_CRT ( '[MOV] CIRCULAR segment added. Count=', fly_queue_count, NL )
+
+  RETURN(RESULT_OK)
+END add_fly_circular
+
+
+ROUTINE add_fly_joint(p1, p2, p3, p4, p5, p6 : REAL; paramnumber : INTEGER) : INTEGER
+VAR
+  target : JOINTPOS
+BEGIN
+  IF NOT check_par_num(paramnumber, 6) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF fly_queue_count >= max_fly_points THEN
+    WRITE LUN_CRT ( '[MOV] FLY queue is full', NL )
+
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF fly_queue_type = QUEUE_NONE THEN
+    fly_queue_type := QUEUE_JOINT
+  ENDIF
+
+  IF fly_queue_type <> QUEUE_JOINT THEN
+    WRITE LUN_CRT ( '[MOV] Cannot mix JOINT and CART queue', NL )
+
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  target[1] := p1
+  target[2] := p2
+  target[3] := p3
+  target[4] := p4
+  target[5] := p5
+  target[6] := p6
+
+  fly_queue_count := fly_queue_count + 1
+  fly_jnt_queue[fly_queue_count] := target
+
+  WRITE LUN_CRT ( '[MOV] JOINT point added. Count=', fly_queue_count, NL )
+
+  RETURN(RESULT_OK)
+END add_fly_joint
+
+
+ROUTINE execute_fly_queue : INTEGER
+VAR
+  i          : INTEGER
+  last_index : INTEGER
+BEGIN
+  IF fly_queue_count < 2 THEN
+    WRITE LUN_CRT ( '[MOV] At least two queue elements required', NL )
+
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF check_aborted THEN
+    clear_fly_queue
+    RETURN(RESULT_ABORTED)
+  ENDIF
+
+  WRITE LUN_CRT ( '[MOV] Executing FLY queue. Count=', fly_queue_count, NL )
+
+  IF fly_queue_type = QUEUE_CART THEN
+    IF $FLY_TYPE <> FLY_CART THEN
+      WRITE LUN_CRT ( '[MOV] CART queue requires FLY_CART', NL )
+
+      RETURN(RESULT_UNAVAILABLE)
+    ENDIF
+
+    FOR i := 1 TO fly_queue_count - 1 DO
+      IF check_aborted THEN
+        clear_fly_queue
+        RETURN(RESULT_ABORTED)
+      ENDIF
+
+      IF fly_segment_type[i] = SEG_LINEAR THEN
+        MOVEFLY LINEAR TO fly_target_queue[i] ADVANCE
+      ELSE
+        IF fly_segment_type[i] = SEG_CIRCULAR THEN
+          MOVEFLY CIRCULAR TO fly_target_queue[i] VIA fly_via_queue[i] ADVANCE
+        ELSE
+          WRITE LUN_CRT ( '[MOV] Invalid CART segment type', NL )
+
+          RETURN(RESULT_UNAVAILABLE)
+        ENDIF
+      ENDIF
+
+      IF check_aborted THEN
+        clear_fly_queue
+        RETURN(RESULT_ABORTED)
+      ENDIF
+    ENDFOR
+
+    last_index := fly_queue_count
+
+    IF check_aborted THEN
+      clear_fly_queue
+      RETURN(RESULT_ABORTED)
+    ENDIF
+
+    IF fly_segment_type[last_index] = SEG_LINEAR THEN
+      MOVE LINEAR TO fly_target_queue[last_index]
+    ELSE
+      IF fly_segment_type[last_index] = SEG_CIRCULAR THEN
+        MOVE CIRCULAR TO fly_target_queue[last_index] VIA fly_via_queue[last_index]
+      ELSE
+        WRITE LUN_CRT ( '[MOV] Invalid final CART segment type', NL )
+
+        RETURN(RESULT_UNAVAILABLE)
+      ENDIF
+    ENDIF
+
+    IF check_aborted THEN
+      clear_fly_queue
+      RETURN(RESULT_ABORTED)
+    ENDIF
+
+    clear_fly_queue
+
+    RETURN(RESULT_OK)
+  ENDIF
+
+  IF fly_queue_type = QUEUE_JOINT THEN
+    IF $FLY_TYPE = FLY_CART THEN
+      WRITE LUN_CRT ( '[MOV] JOINT queue requires FLY_NORM', NL )
+
+      RETURN(RESULT_UNAVAILABLE)
+    ENDIF
+
+    FOR i := 1 TO fly_queue_count - 1 DO
+      IF check_aborted THEN
+        clear_fly_queue
+        RETURN(RESULT_ABORTED)
+      ENDIF
+
+      MOVEFLY JOINT TO fly_jnt_queue[i] ADVANCE
+
+      IF check_aborted THEN
+        clear_fly_queue
+        RETURN(RESULT_ABORTED)
+      ENDIF
+    ENDFOR
+
+    IF check_aborted THEN
+      clear_fly_queue
+      RETURN(RESULT_ABORTED)
+    ENDIF
+
+    MOVE JOINT TO fly_jnt_queue[fly_queue_count]
+
+    IF check_aborted THEN
+      clear_fly_queue
+      RETURN(RESULT_ABORTED)
+    ENDIF
+
+    clear_fly_queue
+
+    RETURN(RESULT_OK)
+  ENDIF
+
+  WRITE LUN_CRT ( '[MOV] Invalid queue type', NL )
+
+  RETURN(RESULT_UNAVAILABLE)
+END execute_fly_queue
+
+
+ROUTINE clear_native_paths
+VAR
+  count : INTEGER
+  idx   : INTEGER
+BEGIN
+  count := PATH_LEN(cart_path)
+  IF count > 0 THEN
+    NODE_DEL(cart_path, 1, count)
+  ENDIF
+
+  count := PATH_LEN(joint_path)
+  IF count > 0 THEN
+    NODE_DEL(joint_path, 1, count)
+  ENDIF
+
+  FOR idx := 1 TO 32 DO
+    cart_path.COND_TBL[idx] := 0
+    joint_path.COND_TBL[idx] := 0
+  ENDFOR
+END clear_native_paths
+
+
+ROUTINE set_path_feedback_lun(lun : INTEGER)
+BEGIN
+  path_feedback_lun := lun
+END set_path_feedback_lun
+
+
+ROUTINE get_path_id : INTEGER
+BEGIN
+  RETURN(active_path_id)
+END get_path_id
+
+
+ROUTINE get_path_node : INTEGER
+BEGIN
+  RETURN(path_current_node)
+END get_path_node
+
+
+ROUTINE get_path_state : INTEGER
+BEGIN
+  RETURN(path_state)
+END get_path_state
+
+
+ROUTINE get_path_waiting : INTEGER
+BEGIN
+  IF path_is_waiting THEN
+    RETURN(1)
+  ENDIF
+  RETURN(0)
+END get_path_waiting
+
+
+ROUTINE begin_path(path_id, path_type, node_count, first_node, last_node : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 5) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (path_id <= 0) OR (node_count <= 0) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (path_type <> PATH_CART) AND (path_type <> PATH_JOINT) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (first_node < 1) OR (last_node < 1) OR (first_node > node_count) OR (last_node > node_count) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  clear_native_paths
+
+  active_path_id := ROUND(path_id)
+  active_path_type := ROUND(path_type)
+  expected_path_nodes := ROUND(node_count)
+  committed_path_nodes := 0
+  pending_path_node := 0
+  path_start_index := ROUND(first_node)
+  path_end_index := ROUND(last_node)
+  path_current_node := 0
+  path_upload_active := TRUE
+  path_node_pending := FALSE
+  path_is_waiting := FALSE
+  path_state := PATH_UPLOADING
+
+  RETURN(RESULT_OK)
+END begin_path
+
+
+ROUTINE set_path_frame(path_id, frame_index, p1, p2, p3, p4, p5, p6 : REAL; paramnumber : INTEGER) : INTEGER
+VAR
+  idx : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 8) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (NOT path_upload_active) OR (ROUND(path_id) <> active_path_id) OR (active_path_type <> PATH_CART) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  idx := ROUND(frame_index)
+  IF (idx < 1) OR (idx > 7) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  cart_path.FRM_TBL[idx] := POS( p1, p2, p3, p4, p5, p6 )
+  RETURN(RESULT_OK)
+END set_path_frame
+
+
+ROUTINE set_path_condition(path_id, slot, handler : REAL; paramnumber : INTEGER) : INTEGER
+VAR
+  idx : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 3) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (NOT path_upload_active) OR (ROUND(path_id) <> active_path_id) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  idx := ROUND(slot)
+  IF (idx < 1) OR (idx > 32) OR (handler <= 0) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF active_path_type = PATH_CART THEN
+    cart_path.COND_TBL[idx] := ROUND(handler)
+  ELSE
+    joint_path.COND_TBL[idx] := ROUND(handler)
+  ENDIF
+  RETURN(RESULT_OK)
+END set_path_condition
+
+
+ROUTINE path_node_target(path_id, node_index, motion_type, p1, p2, p3, p4, p5, p6 : REAL; paramnumber : INTEGER) : INTEGER
+VAR
+  idx    : INTEGER
+  target : JOINTPOS
+BEGIN
+  IF NOT check_par_num(paramnumber, 9) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  idx := ROUND(node_index)
+  IF (NOT path_upload_active) OR path_node_pending OR (ROUND(path_id) <> active_path_id) OR (idx <> committed_path_nodes + 1) OR (idx > expected_path_nodes) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF active_path_type = PATH_CART THEN
+    NODE_APP(cart_path)
+    cart_path.NODE[idx].$MAIN_POS := POS(p1, p2, p3, p4, p5, p6)
+
+    IF motion_type = 0 THEN
+      cart_path.NODE[idx].$MOVE_TYPE := JOINT
+    ELSE
+      IF motion_type = 1 THEN
+        cart_path.NODE[idx].$MOVE_TYPE := LINEAR
+      ELSE
+        IF motion_type = 2 THEN
+          cart_path.NODE[idx].$MOVE_TYPE := CIRCULAR
+        ELSE
+          IF motion_type = 3 THEN
+            cart_path.NODE[idx].$MOVE_TYPE := SEG_VIA
+          ELSE
+            RETURN(RESULT_UNAVAILABLE)
+          ENDIF
+        ENDIF
+      ENDIF
+    ENDIF
+  ELSE
+    IF motion_type <> 0 THEN
+      RETURN(RESULT_UNAVAILABLE)
+    ENDIF
+
+    target[1] := p1
+    target[2] := p2
+    target[3] := p3
+    target[4] := p4
+    target[5] := p5
+    target[6] := p6
+    NODE_APP(joint_path)
+    joint_path.NODE[idx].$MAIN_JNTP := target
+    joint_path.NODE[idx].$MOVE_TYPE := JOINT
+  ENDIF
+
+  pending_path_node := idx
+  path_node_pending := TRUE
+  path_target_set := TRUE
+  path_motion_set := FALSE
+  path_blend_set := FALSE
+  path_sync_set := FALSE
+  RETURN(RESULT_OK)
+END path_node_target
+
+
+ROUTINE path_node_motion(path_id, node_index, lin_speed, rot_speed, seg_ovr, term_type, tolerance, seg_data : REAL; paramnumber : INTEGER) : INTEGER
+VAR
+  idx : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 8) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  idx := ROUND(node_index)
+  IF (NOT path_node_pending) OR (ROUND(path_id) <> active_path_id) OR (idx <> pending_path_node) OR (seg_ovr <= 0) OR (seg_ovr > 100) OR (term_type < 0) OR (term_type > 4) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF active_path_type = PATH_CART THEN
+    cart_path.NODE[idx].$LIN_SPD := lin_speed
+    cart_path.NODE[idx].$ROT_SPD := rot_speed
+    cart_path.NODE[idx].$SEG_OVR := ROUND(seg_ovr)
+    cart_path.NODE[idx].$SEG_TOL := tolerance
+
+    IF term_type = 0 THEN
+      cart_path.NODE[idx].$SEG_TERM_TYPE := COARSE
+    ELSE
+      IF term_type = 1 THEN
+        cart_path.NODE[idx].$SEG_TERM_TYPE := FINE
+      ELSE
+        IF term_type = 2 THEN
+          cart_path.NODE[idx].$SEG_TERM_TYPE := JNT_COARSE
+        ELSE
+          IF term_type = 3 THEN
+            cart_path.NODE[idx].$SEG_TERM_TYPE := JNT_FINE
+          ELSE
+            cart_path.NODE[idx].$SEG_TERM_TYPE := NOSETTLE
+          ENDIF
+        ENDIF
+      ENDIF
+    ENDIF
+
+    cart_path.NODE[idx].$SEG_DATA := (seg_data <> 0)
+  ELSE
+    joint_path.NODE[idx].$SEG_OVR := ROUND(seg_ovr)
+    joint_path.NODE[idx].$SEG_TOL := tolerance
+
+    IF term_type = 0 THEN
+      joint_path.NODE[idx].$SEG_TERM_TYPE := COARSE
+    ELSE
+      IF term_type = 1 THEN
+        joint_path.NODE[idx].$SEG_TERM_TYPE := FINE
+      ELSE
+        IF term_type = 2 THEN
+          joint_path.NODE[idx].$SEG_TERM_TYPE := JNT_COARSE
+        ELSE
+          IF term_type = 3 THEN
+            joint_path.NODE[idx].$SEG_TERM_TYPE := JNT_FINE
+          ELSE
+            joint_path.NODE[idx].$SEG_TERM_TYPE := NOSETTLE
+          ENDIF
+        ENDIF
+      ENDIF
+    ENDIF
+
+    joint_path.NODE[idx].$SEG_DATA := (seg_data <> 0)
+  ENDIF
+
+  path_motion_set := TRUE
+  RETURN(RESULT_OK)
+END path_node_motion
+
+
+ROUTINE path_node_blend(path_id, node_index, use_fly, fly_type, fly_per, fly_dist, fly_traj, stress_per : REAL; paramnumber : INTEGER) : INTEGER
+VAR
+  idx : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 8) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  idx := ROUND(node_index)
+  IF (NOT path_node_pending) OR (ROUND(path_id) <> active_path_id) OR (idx <> pending_path_node) OR (fly_type < 0) OR (fly_type > 1) OR (fly_traj < 0) OR (fly_traj > 3) OR (fly_dist < 0) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF active_path_type = PATH_CART THEN
+    cart_path.NODE[idx].$SEG_FLY := (use_fly <> 0)
+    cart_path.NODE[idx].$SEG_FLY_PER := ROUND(fly_per)
+    cart_path.NODE[idx].$SEG_FLY_DIST := fly_dist
+    cart_path.NODE[idx].$SEG_STRESS_PER := ROUND(stress_per)
+
+    IF fly_type = 0 THEN
+      cart_path.NODE[idx].$SEG_FLY_TYPE := FLY_NORM
+    ELSE
+      cart_path.NODE[idx].$SEG_FLY_TYPE := FLY_CART
+    ENDIF
+
+    IF fly_traj = 0 THEN
+      cart_path.NODE[idx].$SEG_FLY_TRAJ := FLY_AUTO
+    ELSE
+      IF fly_traj = 1 THEN
+        cart_path.NODE[idx].$SEG_FLY_TRAJ := FLY_TOL
+      ELSE
+        IF fly_traj = 2 THEN
+          cart_path.NODE[idx].$SEG_FLY_TRAJ := FLY_PASS
+        ELSE
+          cart_path.NODE[idx].$SEG_FLY_TRAJ := FLY_FROM
+        ENDIF
+      ENDIF
+    ENDIF
+  ELSE
+    joint_path.NODE[idx].$SEG_FLY := (use_fly <> 0)
+    joint_path.NODE[idx].$SEG_FLY_PER := ROUND(fly_per)
+    IF fly_type = 0 THEN
+      joint_path.NODE[idx].$SEG_FLY_TYPE := FLY_NORM
+    ELSE
+      joint_path.NODE[idx].$SEG_FLY_TYPE := FLY_CART
+    ENDIF
+  ENDIF
+
+  path_blend_set := TRUE
+  RETURN(RESULT_OK)
+END path_node_blend
+
+
+ROUTINE path_node_sync(path_id, node_index, ref_idx, tool_idx, cond_mask, cond_mask_back, seg_wait : REAL; paramnumber : INTEGER) : INTEGER
+VAR
+  idx : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 7) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  idx := ROUND(node_index)
+  IF (NOT path_node_pending) OR (ROUND(path_id) <> active_path_id) OR (idx <> pending_path_node) OR (ref_idx < 0) OR (ref_idx > 7) OR (tool_idx < 0) OR (tool_idx > 7) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF active_path_type = PATH_CART THEN
+    cart_path.NODE[idx].$SEG_REF_IDX := ROUND(ref_idx)
+    cart_path.NODE[idx].$SEG_TOOL_IDX := ROUND(tool_idx)
+    cart_path.NODE[idx].$COND_MASK := ROUND(cond_mask)
+    cart_path.NODE[idx].$COND_MASK_BACK := ROUND(cond_mask_back)
+    cart_path.NODE[idx].$SEG_WAIT := (seg_wait <> 0)
+  ELSE
+    IF (ref_idx <> 0) OR (tool_idx <> 0) THEN
+      RETURN(RESULT_UNAVAILABLE)
+    ENDIF
+    joint_path.NODE[idx].$COND_MASK := ROUND(cond_mask)
+    joint_path.NODE[idx].$COND_MASK_BACK := ROUND(cond_mask_back)
+    joint_path.NODE[idx].$SEG_WAIT := (seg_wait <> 0)
+  ENDIF
+
+  path_sync_set := TRUE
+  RETURN(RESULT_OK)
+END path_node_sync
+
+
+ROUTINE commit_path_node(path_id, node_index : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 2) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (NOT path_node_pending) OR (ROUND(path_id) <> active_path_id) OR (ROUND(node_index) <> pending_path_node) OR (NOT path_target_set) OR (NOT path_motion_set) OR (NOT path_blend_set) OR (NOT path_sync_set) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  committed_path_nodes := committed_path_nodes + 1
+  path_node_pending := FALSE
+  pending_path_node := 0
+  RETURN(RESULT_OK)
+END commit_path_node
+
+
+ROUTINE commit_path(path_id, node_count : REAL; paramnumber : INTEGER) : INTEGER
+VAR
+  actual_count : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 2) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (NOT path_upload_active) OR path_node_pending OR (ROUND(path_id) <> active_path_id) OR (ROUND(node_count) <> expected_path_nodes) OR (committed_path_nodes <> expected_path_nodes) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF active_path_type = PATH_CART THEN
+    actual_count := PATH_LEN(cart_path)
+  ELSE
+    actual_count := PATH_LEN(joint_path)
+  ENDIF
+
+  IF actual_count <> expected_path_nodes THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  path_upload_active := FALSE
+  path_state := PATH_READY
+  RETURN(RESULT_OK)
+END commit_path
+
+
+ROUTINE abort_path_upload(path_id : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 1) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF ROUND(path_id) <> active_path_id THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  clear_native_paths
+  path_upload_active := FALSE
+  path_node_pending := FALSE
+  path_is_waiting := FALSE
+  expected_path_nodes := 0
+  committed_path_nodes := 0
+  path_current_node := 0
+  path_state := PATH_ABORTED
+  RETURN(RESULT_OK)
+END abort_path_upload
+
+
+ROUTINE signal_path_segment(path_id, expected_node : INTEGER) : INTEGER
+BEGIN
+  IF (path_id <> active_path_id) OR (NOT path_is_waiting) THEN
+    RETURN(0)
+  ENDIF
+
+  IF (expected_node <> 0) AND (expected_node <> path_current_node) THEN
+    RETURN(0)
+  ENDIF
+
+  IF active_path_type = PATH_CART THEN
+    SIGNAL SEGMENT cart_path
+  ELSE
+    SIGNAL SEGMENT joint_path
+  ENDIF
+
+  path_is_waiting := FALSE
+  path_state := PATH_EXECUTING
+  RETURN(1)
+END signal_path_segment
+
+
+ROUTINE execute_path(path_id, first_node, last_node : REAL; paramnumber : INTEGER) : INTEGER
+BEGIN
+  IF NOT check_par_num(paramnumber, 3) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF (path_state <> PATH_READY) OR (ROUND(path_id) <> active_path_id) OR (ROUND(first_node) <> path_start_index) OR (ROUND(last_node) <> path_end_index) THEN
+    RETURN(RESULT_UNAVAILABLE)
+  ENDIF
+
+  IF check_aborted THEN
+    RETURN(RESULT_ABORTED)
+  ENDIF
+
+  path_state := PATH_EXECUTING
+  path_is_waiting := FALSE
+  path_current_node := path_start_index
+
+  IF active_path_type = PATH_CART THEN
+    MOVE ALONG cart_path[path_start_index..path_end_index]
+  ELSE
+    MOVE ALONG joint_path[path_start_index..path_end_index]
+  ENDIF
+
+  IF check_aborted THEN
+    path_state := PATH_ABORTED
+    RETURN(RESULT_ABORTED)
+  ENDIF
+
+  path_current_node := path_end_index
+  path_state := PATH_DONE
+  RETURN(RESULT_OK)
+END execute_path
+
+
+ROUTINE report_path_event(event_code : INTEGER)
+BEGIN
+  path_current_node := $THRD_PARAM
+
+  IF path_feedback_lun <> 0 THEN
+    WRITE path_feedback_lun ( 'PATH_EVENT:', active_path_id, ',', path_current_node, ',', event_code, NL )
+  ENDIF
+END report_path_event
+
+
+ROUTINE report_path_wait
+BEGIN
+  path_is_waiting := TRUE
+  path_state := PATH_WAITING
+  path_current_node := $THRD_PARAM
+
+  IF path_feedback_lun <> 0 THEN
+    WRITE path_feedback_lun ( 'PATH_WAITING:', active_path_id, ',', path_current_node, NL )
+  ENDIF
+END report_path_wait
+
+
+ROUTINE hello : INTEGER
+BEGIN
+  WRITE LUN_CRT ('[MOV] Hello', NL)
+  WRITE LUN_TP ('[MOV] Hello', NL)
+
+  RETURN(RESULT_OK)
+END hello
+
+
+ROUTINE call_service(command : STRING) : INTEGER
+VAR
+  param       : ARRAY[paramlength] OF REAL
+  action      : STRING[25]
+  paramnumber : INTEGER
+BEGIN
+  action := ''
+  paramnumber := 0
+
+  get_command(command, action)
+
+  IF action = 'Hello' THEN
+    RETURN(hello)
+  ENDIF
+
+  IF action = 'clearFlyQueue' THEN
+    RETURN(clear_fly_queue)
+  ENDIF
+
+  IF action = 'executeFlyQueue' THEN
+    RETURN(execute_fly_queue)
+  ENDIF
+
+  paramnumber := get_parameter(command, param)
+
+  IF paramnumber < 0 THEN
+    RETURN(RESULT_PARSE_ERROR)
+  ENDIF
+
+  IF action = 'beginPath' THEN
+    RETURN( begin_path( param[1], param[2], param[3], param[4], param[5], paramnumber ) )
+  ENDIF
+
+  IF action = 'setPathFrame' THEN
+    RETURN( set_path_frame( param[1], param[2], param[3], param[4], param[5], param[6], param[7], param[8], paramnumber ) )
+  ENDIF
+
+  IF action = 'setPathCondition' THEN
+    RETURN( set_path_condition( param[1], param[2], param[3], paramnumber ) )
+  ENDIF
+
+  IF action = 'pathNodeTarget' THEN
+    RETURN( path_node_target( param[1], param[2], param[3], param[4], param[5], param[6], param[7], param[8], param[9], paramnumber ) )
+  ENDIF
+
+  IF action = 'pathNodeMotion' THEN
+    RETURN( path_node_motion( param[1], param[2], param[3], param[4], param[5], param[6], param[7], param[8], paramnumber ) )
+  ENDIF
+
+  IF action = 'pathNodeBlend' THEN
+    RETURN( path_node_blend( param[1], param[2], param[3], param[4], param[5], param[6], param[7], param[8], paramnumber ) )
+  ENDIF
+
+  IF action = 'pathNodeSync' THEN
+    RETURN( path_node_sync( param[1], param[2], param[3], param[4], param[5], param[6], param[7], paramnumber ) )
+  ENDIF
+
+  IF action = 'commitPathNode' THEN
+    RETURN( commit_path_node( param[1], param[2], paramnumber ) )
+  ENDIF
+
+  IF action = 'commitPath' THEN
+    RETURN( commit_path( param[1], param[2], paramnumber ) )
+  ENDIF
+
+  IF action = 'abortPathUpload' THEN
+    RETURN( abort_path_upload( param[1], paramnumber ) )
+  ENDIF
+
+  IF action = 'executePath' THEN
+    RETURN( execute_path( param[1], param[2], param[3], paramnumber ) )
+  ENDIF
+
+  IF action = 'setBase' THEN
+    RETURN( set_base_to( param[1], param[2], param[3], param[4], param[5], param[6], paramnumber ) )
+  ENDIF
+
+  IF (action = 'setTool') OR (action = 'tool') THEN
+
+    RETURN( set_tool_to( param[1], param[2], param[3], param[4], param[5], param[6], paramnumber ) )
+  ENDIF
+
+  IF (action = 'setUframe') OR (action = 'userFrame') THEN
+
+    RETURN( set_uframe_to( param[1], param[2], param[3], param[4], param[5], param[6], paramnumber ) )
+  ENDIF
+
+  IF action = 'setSpeedLin' THEN
+    RETURN( set_speed_linear_to( param[1], paramnumber ) )
+  ENDIF
+
+  IF action = 'setSpeedJnt' THEN
+    RETURN( set_speed_joint_to( param[1], paramnumber ) )
+  ENDIF
+
+  IF action = 'setJointOverrides' THEN
+    RETURN( set_joint_overrides( param[1], param[2], param[3], param[4], param[5], param[6], paramnumber ) )
+  ENDIF
+
+  IF action = 'setAcceleration' THEN
+    RETURN( set_acceleration_to( param[1], paramnumber ) )
+  ENDIF
+
+  IF action = 'setDeceleration' THEN
+    RETURN( set_deceleration_to( param[1], paramnumber ) )
+  ENDIF
+
+  IF action = 'setOrientation' THEN
+    RETURN( set_orientation_to( param[1], paramnumber ) )
+  ENDIF
+
+  IF action = 'setTermination' THEN
+    RETURN( set_termination_to( param[1], paramnumber ) )
+  ENDIF
+
+  IF action = 'setFlyNorm' THEN
+    RETURN( set_fly_norm_to( param[1], paramnumber ) )
+  ENDIF
+
+  IF action = 'setFlyCart' THEN
+    RETURN( set_fly_cart_to( param[1], param[2], param[3], paramnumber ) )
+  ENDIF
+
+  IF action = 'moveJoint' THEN
+    RETURN( move_joint_to( param[1], param[2], param[3], param[4], param[5], param[6], paramnumber ) )
+  ENDIF
+
+  IF action = 'moveLin' THEN
+    RETURN( move_linear_to( param[1], param[2], param[3], param[4], param[5], param[6], paramnumber ) )
+  ENDIF
+
+  IF action = 'moveCircular' THEN
+    RETURN( move_circular_to( param[1], param[2], param[3], param[4], param[5], param[6], param[7], param[8], param[9], param[10], param[11], param[12], paramnumber ) )
+  ENDIF
+
+  IF action = 'moveRelative' THEN
+    RETURN( move_relative_to( param[1], param[2], param[3], param[4], paramnumber ) )
+  ENDIF
+
+  IF action = 'moveAbout' THEN
+    RETURN( move_about_to( param[1], param[2], param[3], param[4], param[5], paramnumber ) )
+  ENDIF
+
+  IF action = 'addFlyLin' THEN
+    RETURN( add_fly_linear( param[1], param[2], param[3], param[4], param[5], param[6], paramnumber ) )
+  ENDIF
+
+  IF (action = 'addFlyCirc') OR (action = 'addFlyCircular') THEN
+
+    RETURN( add_fly_circular( param[1], param[2], param[3], param[4], param[5], param[6], param[7], param[8], param[9], param[10], param[11], param[12], paramnumber ) )
+  ENDIF
+
+  IF action = 'addFlyJoint' THEN
+    RETURN( add_fly_joint( param[1], param[2], param[3], param[4], param[5], param[6], paramnumber ) )
+  ENDIF
+
+  WRITE LUN_CRT ( '[MOV] Unknown action: ', action, NL )
+
+  WRITE LUN_TP ( '[MOV] Unknown action', NL )
+
+  RETURN(RESULT_UNKNOWN_ACTION)
+END call_service
+
+
+BEGIN
+  parse_ok := FALSE
+
+  fly_queue_type := QUEUE_NONE
+  fly_queue_count := 0
+
+  motion_aborted := FALSE
+  path_upload_active := FALSE
+  path_node_pending := FALSE
+  path_is_waiting := FALSE
+  active_path_id := 0
+  active_path_type := PATH_CART
+  expected_path_nodes := 0
+  committed_path_nodes := 0
+  pending_path_node := 0
+  path_start_index := 0
+  path_end_index := 0
+  path_current_node := 0
+  path_state := PATH_EMPTY
+  path_feedback_lun := 0
+
+  CONDITION[40] NODISABLE:
+    WHEN SEGMENT WAIT cart_path DO
+      report_path_wait
+  ENDCONDITION
+
+  CONDITION[41] NODISABLE:
+    WHEN SEGMENT WAIT joint_path DO
+      report_path_wait
+  ENDCONDITION
+
+  ENABLE CONDITION[40], CONDITION[41]
+
+  $FLY_TYPE := FLY_NORM
+  $FLY_PER := 75
+
+  WRITE LUN_CRT ( 'ROS2_MOVEMENTS_1 ready', NL )
+
+  WRITE LUN_TP ( 'ROS2_MOVEMENTS_1 ready', NL )
+
+  WHILE TRUE DO
+    DELAY 200
+  ENDWHILE
+END ROS2_MOVEMENTS_1

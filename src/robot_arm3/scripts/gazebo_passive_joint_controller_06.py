@@ -8,6 +8,7 @@ from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
+from std_srvs.srv import SetBool
 
 
 class GazeboPassiveJointController06(Node):
@@ -21,6 +22,7 @@ class GazeboPassiveJointController06(Node):
 
         self._active_joint_positions: Optional[Tuple[float, float]] = None
         self._initialized = False
+        self._solver_enabled = True
         self._warned_missing_joints = False
         self._last_log_time = 0.0
 
@@ -31,6 +33,7 @@ class GazeboPassiveJointController06(Node):
         )
         self.create_subscription(JointState, "/joint_states", self.joint_state_callback, 10)
         self.create_timer(1.0 / 50.0, self.timer_callback)
+        self.create_service(SetBool, "~/set_enabled", self.set_enabled_callback)
 
         self.get_logger().info(
             "Gazebo passive joint controller 06 started. "
@@ -51,7 +54,7 @@ class GazeboPassiveJointController06(Node):
         self._warned_missing_joints = False
 
     def timer_callback(self) -> None:
-        if self._active_joint_positions is None:
+        if not self._solver_enabled or self._active_joint_positions is None:
             return
 
         joint_2, joint_3 = self._active_joint_positions
@@ -79,10 +82,21 @@ class GazeboPassiveJointController06(Node):
         now = time.monotonic()
         if now - self._last_log_time >= 1.0:
             self._last_log_time = now
-            self.get_logger().info(
+            self.get_logger().debug(
                 "%s: commanding joint_7=%.6f rad, joint_8=%.6f rad from joint_2=%.6f rad, joint_3=%.6f rad"
                 % (mode, joint_7, joint_8, joint_2, joint_3)
             )
+
+    def set_enabled_callback(self, request, response):
+        self._solver_enabled = bool(request.data)
+        response.success = True
+        response.message = (
+            "passive joint solver enabled"
+            if self._solver_enabled
+            else "passive joint solver paused for mirror teleport"
+        )
+        self.get_logger().info(response.message)
+        return response
 
     @staticmethod
     def _get_joint_position(msg: JointState, name: str) -> Optional[float]:

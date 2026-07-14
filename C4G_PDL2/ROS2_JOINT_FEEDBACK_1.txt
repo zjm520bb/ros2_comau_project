@@ -1,0 +1,133 @@
+PROGRAM ROS2_JOINT_FEEDBACK_1 NOHOLD
+
+CONST
+  feedback_port       = 8001
+  feedback_period_ms  = 50
+  reconnect_delay_ms  = 500
+
+  SETUP_STATE = 0
+  SEND_STATE  = 10
+  ERROR_STATE = 90
+
+
+VAR
+  state         : INTEGER
+  feedback_lun  : INTEGER
+  actual_joints : JOINTPOS
+
+
+ROUTINE accept_client(PORT : INTEGER) : INTEGER EXPORTED FROM Connect_via_TCP_C4G_1
+ROUTINE disconnect_from(LUN : INTEGER) : INTEGER EXPORTED FROM Connect_via_TCP_C4G_1
+
+
+ROUTINE display(printable : STRING) : INTEGER
+BEGIN
+  WRITE LUN_CRT ( printable, NL )
+
+  WRITE LUN_TP ( printable, NL )
+
+  RETURN(0)
+END display
+
+
+ROUTINE safe_disconnect : INTEGER
+BEGIN
+  IF feedback_lun <> 0 THEN
+    disconnect_from(feedback_lun)
+    feedback_lun := 0
+  ENDIF
+
+  RETURN(0)
+END safe_disconnect
+
+
+ROUTINE setup_connection : BOOLEAN
+BEGIN
+  safe_disconnect
+
+  display( '[FEEDBACK] Waiting for ROS2 on port 8001' )
+
+  feedback_lun := accept_client(feedback_port)
+
+  IF feedback_lun = -1 THEN
+    feedback_lun := 0
+
+    display( '[FEEDBACK] Connection failed' )
+
+    RETURN(FALSE)
+  ENDIF
+
+  display( '[FEEDBACK] ROS2 connected' )
+
+  RETURN(TRUE)
+END setup_connection
+
+
+ROUTINE send_joint_feedback : INTEGER
+BEGIN
+  IF feedback_lun = 0 THEN
+    RETURN(-1)
+  ENDIF
+
+  actual_joints := ARM_JNTP(1)
+
+  WRITE feedback_lun ( 'JOINTS:', actual_joints[1], ',', actual_joints[2], ',', actual_joints[3], ',', actual_joints[4], ',', actual_joints[5], ',', actual_joints[6] )
+
+  RETURN(0)
+END send_joint_feedback
+
+
+BEGIN
+  feedback_lun := 0
+  state := SETUP_STATE
+
+  display( '[FEEDBACK] ROS2_JOINT_FEEDBACK_1 started' )
+
+  WHILE TRUE DO
+
+    SELECT state OF
+
+      CASE (SETUP_STATE):
+
+        IF setup_connection THEN
+          state := SEND_STATE
+        ELSE
+          DELAY reconnect_delay_ms
+          state := SETUP_STATE
+        ENDIF
+
+
+      CASE (SEND_STATE):
+
+        IF send_joint_feedback = 0 THEN
+          DELAY feedback_period_ms
+          state := SEND_STATE
+        ELSE
+          display( '[FEEDBACK] Sending failed' )
+
+          state := ERROR_STATE
+        ENDIF
+
+
+      CASE (ERROR_STATE):
+
+        display( '[FEEDBACK] Reconnecting' )
+
+        safe_disconnect
+
+        DELAY reconnect_delay_ms
+
+        state := SETUP_STATE
+
+
+      ELSE:
+
+        display( '[FEEDBACK] Unknown state' )
+
+        safe_disconnect
+
+        state := SETUP_STATE
+
+    ENDSELECT
+  ENDWHILE
+END ROS2_JOINT_FEEDBACK_1

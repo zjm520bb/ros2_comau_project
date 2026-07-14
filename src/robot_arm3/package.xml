@@ -22,13 +22,19 @@ for robot_arm3 robot</p>
   <depend>shape_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
   <depend>trajectory_msgs</depend>
   <depend>xacro</depend>
   <depend>ros_gz_sim</depend>
   <depend>gz_ros2_control</depend>
   <depend>controller_manager</depend>
+  <depend>controller_manager_msgs</depend>
   <depend>control_msgs</depend>
   <depend>action_msgs</depend>
+  <depend>arm_tcp_bridge_interfaces</depend>
+  <depend>ignition-gazebo6</depend>
+  <depend>ignition-utils1</depend>
+  <depend>gz-cmake3</depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>python3-yaml</exec_depend>

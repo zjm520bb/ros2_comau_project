@@ -1,0 +1,14 @@
+arm_tcp_bridge_interfaces/PathSequence sequence
+bool require_start_check
+float64[6] start_tolerance_deg
+float64 feedback_timeout_s
+---
+bool success
+string message
+uint32 completed_paths
+---
+string state
+uint32 current_path
+uint32 total_paths
+uint32 current_node
+

@@ -1,6 +1,12 @@
 /**:
   ros__parameters:
     action_name: /sim/arm/execute
+    path_action_name: /sim/arm/execute_path
+    path_event_topic: /sim/arm/path_events
+    prepared_path_topic: /offline/prepared_path
+    motion_active_topic: /offline/motion_active
+    max_path_nodes: 1000
+    flange_link: Link_6
     planning_group: arm
     base_frame: c4g_base
     end_effector_link: tcp_link
@@ -9,6 +15,11 @@
     lin_planner_id: LIN
     circ_planner_id: CIRC
     pilz_max_trans_velocity: 1.0
+    ompl_pipeline_id: ompl
+    ompl_planner_id: RRTConnectkConfigDefault
+    ompl_planning_time: 10.0
+    ompl_planning_attempts: 10
+    ompl_wrist_corridor_margin_degrees: 0.5
     sequence_action_name: /sequence_move_group
     max_fly_points: 20
     fly_norm_radius_safety_factor: 0.45

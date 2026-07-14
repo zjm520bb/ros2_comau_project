@@ -112,6 +112,14 @@ ParsedCommand parse_command(const std::string& text)
     return { CommandType::MOVE_LINEAR, parse_values(payload, 6) };
   if (name == "moveCircular")
     return { CommandType::MOVE_CIRCULAR, parse_values(payload, 12) };
+  if (name == "moveJointAuto")
+    return { CommandType::MOVE_JOINT_AUTO, parse_values(payload, 6) };
+  if (name == "movePoseAuto")
+    return { CommandType::MOVE_POSE_AUTO, parse_values(payload, 6) };
+  if (name == "moveRelative")
+    return { CommandType::MOVE_RELATIVE, parse_values(payload, 4) };
+  if (name == "moveAbout")
+    return { CommandType::MOVE_ABOUT, parse_values(payload, 5) };
   if (name == "setFlyCart")
     return { CommandType::SET_FLY_CART, parse_values(payload, 3) };
   if (name == "setFlyNorm")

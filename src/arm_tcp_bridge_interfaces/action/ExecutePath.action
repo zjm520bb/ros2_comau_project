@@ -1,0 +1,19 @@
+uint8 CARTESIAN=0
+uint8 JOINT=1
+
+uint32 path_id
+uint8 path_type
+arm_tcp_bridge_interfaces/PathFrame[] frames
+arm_tcp_bridge_interfaces/PathCondition[] conditions
+arm_tcp_bridge_interfaces/PathNode[] nodes
+uint32 start_index
+uint32 end_index
+---
+bool success
+string message
+uint32 executed_nodes
+---
+string state
+uint32 uploaded_nodes
+uint32 current_node
+bool waiting

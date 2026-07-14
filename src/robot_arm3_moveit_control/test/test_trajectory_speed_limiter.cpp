@@ -109,6 +109,21 @@ TEST(TrajectorySpeedLimiter, DecelerationUsesDecelerationOverride)
   EXPECT_DOUBLE_EQ(motion.joint_trajectory.points[1].accelerations[0], -0.1);
 }
 
+TEST(TrajectorySpeedLimiter, CollapsesCoincidentSequenceBoundary)
+{
+  auto motion = trajectory();
+  const auto duplicate = motion.joint_trajectory.points[1];
+  motion.joint_trajectory.points.insert(
+      motion.joint_trajectory.points.begin() + 1, duplicate);
+
+  const auto result = control::apply_speed_limits(
+      motion, nullptr, "", settings(), false);
+
+  EXPECT_DOUBLE_EQ(result.time_scale, 1.0);
+  ASSERT_EQ(motion.joint_trajectory.points.size(), 2u);
+  EXPECT_EQ(motion.joint_trajectory.points[1].time_from_start.sec, 1);
+}
+
 TEST(TrajectorySpeedLimiter, RejectsInvalidOverrides)
 {
   auto speed_settings = settings();

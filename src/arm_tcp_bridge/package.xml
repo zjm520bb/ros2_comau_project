@@ -31,6 +31,18 @@
   </depend>
 
   <depend>
+    python3-yaml
+  </depend>
+
+  <depend>
+    std_srvs
+  </depend>
+
+  <depend>
+    std_msgs
+  </depend>
+
+  <depend>
     launch
   </depend>
 

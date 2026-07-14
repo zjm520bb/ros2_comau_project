@@ -1,0 +1,5 @@
+uint32 sequence_id
+uint32 expected_path
+---
+bool accepted
+string message

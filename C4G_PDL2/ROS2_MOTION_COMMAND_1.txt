@@ -1,0 +1,289 @@
+PROGRAM ROS2_MOTION_COMMAND_1 NOHOLD
+
+CONST
+  control_port       = 8002
+  buffer_length      = 64
+  reconnect_delay_ms = 500
+
+  PAUSE_EVENT  = 49301
+  RESUME_EVENT = 49302
+  ABORT_EVENT  = 49303
+
+  SETUP_STATE   = 0
+  COMMAND_STATE = 10
+  ERROR_STATE   = 90
+
+
+VAR
+  state       : INTEGER
+  control_lun : INTEGER
+  command     : STRING[buffer_length]
+
+
+ROUTINE accept_client(PORT : INTEGER) : INTEGER EXPORTED FROM Connect_via_TCP_C4G_1
+ROUTINE disconnect_from(LUN : INTEGER) : INTEGER EXPORTED FROM Connect_via_TCP_C4G_1
+ROUTINE send_to_LUN(LUN : INTEGER; msg : STRING) : INTEGER EXPORTED FROM Connect_via_TCP_C4G_1
+ROUTINE read_from_LUN(LUN : INTEGER) : STRING EXPORTED FROM Connect_via_TCP_C4G_1
+
+ROUTINE signal_path_segment(path_id, expected_node : INTEGER) : INTEGER EXPORTED FROM ROS2_MOVEMENTS_1
+ROUTINE get_path_id : INTEGER EXPORTED FROM ROS2_MOVEMENTS_1
+ROUTINE get_path_node : INTEGER EXPORTED FROM ROS2_MOVEMENTS_1
+ROUTINE get_path_state : INTEGER EXPORTED FROM ROS2_MOVEMENTS_1
+ROUTINE get_path_waiting : INTEGER EXPORTED FROM ROS2_MOVEMENTS_1
+
+
+ROUTINE display(printable : STRING) : INTEGER
+BEGIN
+  WRITE LUN_CRT ( printable, NL )
+
+  WRITE LUN_TP ( printable, NL )
+
+  RETURN(0)
+END display
+
+
+ROUTINE safe_disconnect : INTEGER
+BEGIN
+  IF control_lun <> 0 THEN
+    disconnect_from(control_lun)
+    control_lun := 0
+  ENDIF
+
+  RETURN(0)
+END safe_disconnect
+
+
+ROUTINE setup_connection : BOOLEAN
+BEGIN
+  safe_disconnect
+
+  display( '[CONTROL] Waiting for ROS2 on port 8002' )
+
+  control_lun := accept_client(control_port)
+
+  IF control_lun = -1 THEN
+    control_lun := 0
+
+    display( '[CONTROL] Connection failed' )
+
+    RETURN(FALSE)
+  ENDIF
+
+  display( '[CONTROL] ROS2 connected' )
+
+  RETURN(TRUE)
+END setup_connection
+
+
+ROUTINE str_to_int(value : STRING) : INTEGER
+VAR
+  i        : INTEGER
+  digit    : INTEGER
+  result   : INTEGER
+  negative : BOOLEAN
+BEGIN
+  result := 0
+  negative := FALSE
+  i := 1
+
+  IF STR_LEN(value) = 0 THEN
+    RETURN(-2147483647)
+  ENDIF
+
+  IF ORD(value, 1) = 45 THEN
+    negative := TRUE
+    i := 2
+  ENDIF
+
+  WHILE i <= STR_LEN(value) DO
+    digit := ORD(value, i) - 48
+    IF (digit < 0) OR (digit > 9) THEN
+      RETURN(-2147483647)
+    ENDIF
+    result := result * 10 + digit
+    i := i + 1
+  ENDWHILE
+
+  IF negative THEN
+    result := -result
+  ENDIF
+  RETURN(result)
+END str_to_int
+
+
+ROUTINE parse_path_request(cmd : STRING; path_id, node_index : INTEGER) : BOOLEAN
+VAR
+  colon : INTEGER
+  comma : INTEGER
+  text  : STRING[32]
+BEGIN
+  path_id := 0
+  node_index := 0
+  colon := STR_LOC(cmd, ':')
+  IF colon = 0 THEN
+    RETURN(FALSE)
+  ENDIF
+
+  STR_DEL(cmd, 1, colon)
+  comma := STR_LOC(cmd, ',')
+  IF comma = 0 THEN
+    path_id := str_to_int(cmd)
+    RETURN(path_id > 0)
+  ENDIF
+
+  text := ''
+  STR_XTRT(cmd, 1, comma - 1, text)
+  path_id := str_to_int(text)
+  STR_DEL(cmd, 1, comma)
+  node_index := str_to_int(cmd)
+
+  RETURN((path_id > 0) AND (node_index >= 0))
+END parse_path_request
+
+
+ROUTINE process_control_command(cmd : STRING) : INTEGER
+VAR
+  requested_path : INTEGER
+  requested_node : INTEGER
+  parsed         : BOOLEAN
+  colon          : INTEGER
+  action         : STRING[25]
+BEGIN
+  action := ''
+  colon := STR_LOC(cmd, ':')
+  IF colon <> 0 THEN
+    STR_XTRT(cmd, 1, colon - 1, action)
+  ELSE
+    action := cmd
+  ENDIF
+
+  IF cmd = 'pauseMotion' THEN
+    SIGNAL EVENT PAUSE_EVENT
+
+    send_to_LUN( control_lun, 'Motion pause requested' )
+
+    display( '[CONTROL] pauseMotion event sent' )
+
+    RETURN(1)
+  ENDIF
+
+  IF cmd = 'resumeMotion' THEN
+    SIGNAL EVENT RESUME_EVENT
+
+    send_to_LUN( control_lun, 'Motion resume requested' )
+
+    display( '[CONTROL] resumeMotion event sent' )
+
+    RETURN(1)
+  ENDIF
+
+  IF cmd = 'abortMotion' THEN
+    SIGNAL EVENT ABORT_EVENT
+
+    send_to_LUN( control_lun, 'Motion abort requested' )
+
+    display( '[CONTROL] abortMotion event sent' )
+
+    RETURN(1)
+  ENDIF
+
+  IF cmd = 'Hello' THEN
+    send_to_LUN( control_lun, 'CONTROL READY' )
+
+    RETURN(1)
+  ENDIF
+
+  IF action = 'continuePath' THEN
+    parsed := parse_path_request( cmd, requested_path, requested_node )
+
+    IF parsed AND (signal_path_segment(requested_path, requested_node) = 1) THEN
+      WRITE control_lun ( 'PATH_CONTINUED:', requested_path, ',', requested_node, NL )
+      RETURN(1)
+    ENDIF
+
+    send_to_LUN( control_lun, 'PATH_CONTINUE_REJECTED' )
+    RETURN(0)
+  ENDIF
+
+  IF action = 'getPathState' THEN
+    parsed := parse_path_request( cmd, requested_path, requested_node )
+
+    IF parsed AND (requested_path = get_path_id) THEN
+      WRITE control_lun ( 'PATH_STATE:', get_path_id, ',', get_path_state, ',', get_path_node, ',', get_path_waiting, NL )
+      RETURN(1)
+    ENDIF
+
+    send_to_LUN( control_lun, 'PATH_STATE_UNKNOWN' )
+    RETURN(0)
+  ENDIF
+
+  send_to_LUN( control_lun, 'Unknown control command' )
+
+  display( '[CONTROL] Unknown control command' )
+
+  RETURN(0)
+END process_control_command
+
+
+BEGIN
+  control_lun := 0
+  command := ''
+  state := SETUP_STATE
+
+  display( '[CONTROL] ROS2_MOTION_COMMAND_1 started' )
+
+  WHILE TRUE DO
+
+    SELECT state OF
+
+      CASE (SETUP_STATE):
+
+        IF setup_connection THEN
+          state := COMMAND_STATE
+        ELSE
+          DELAY reconnect_delay_ms
+          state := SETUP_STATE
+        ENDIF
+
+
+      CASE (COMMAND_STATE):
+
+        command := ''
+        command := read_from_LUN(control_lun)
+
+        IF command = '' THEN
+          DELAY 50
+          state := COMMAND_STATE
+        ELSE
+          display( '[CONTROL] Command received' )
+
+          display(command)
+
+          process_control_command(command)
+
+          state := COMMAND_STATE
+        ENDIF
+
+
+      CASE (ERROR_STATE):
+
+        display( '[CONTROL] Reconnecting' )
+
+        safe_disconnect
+
+        DELAY reconnect_delay_ms
+
+        state := SETUP_STATE
+
+
+      ELSE:
+
+        display( '[CONTROL] Unknown state' )
+
+        safe_disconnect
+
+        state := SETUP_STATE
+
+    ENDSELECT
+  ENDWHILE
+END ROS2_MOTION_COMMAND_1

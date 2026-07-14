@@ -32,9 +32,41 @@ def generate_launch_description():
         )
 
     world = LaunchConfiguration("world")
+    initial_sync_mode = LaunchConfiguration("initial_sync_mode")
+    robot_ip = LaunchConfiguration("robot_ip")
+    cmd_port = LaunchConfiguration("cmd_port")
+    control_port = LaunchConfiguration("control_port")
+    feedback_port = LaunchConfiguration("feedback_port")
+    c4g_joint_states_topic = LaunchConfiguration(
+        "c4g_joint_states_topic"
+    )
+    start_arm_tcp_bridge = LaunchConfiguration(
+        "start_arm_tcp_bridge"
+    )
+    enable_motion_control = LaunchConfiguration(
+        "enable_motion_control"
+    )
+    enable_path_protocol = LaunchConfiguration(
+        "enable_path_protocol"
+    )
+    c4g_protocol_version = LaunchConfiguration(
+        "c4g_protocol_version"
+    )
 
     base_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(base_launch_file)
+        PythonLaunchDescriptionSource(base_launch_file),
+        launch_arguments={
+            "initial_sync_mode": initial_sync_mode,
+            "robot_ip": robot_ip,
+            "cmd_port": cmd_port,
+            "control_port": control_port,
+            "feedback_port": feedback_port,
+            "c4g_joint_states_topic": c4g_joint_states_topic,
+            "start_arm_tcp_bridge": start_arm_tcp_bridge,
+            "enable_motion_control": enable_motion_control,
+            "enable_path_protocol": enable_path_protocol,
+            "c4g_protocol_version": c4g_protocol_version,
+        }.items(),
     )
 
     spawn_boxes = IncludeLaunchDescription(
@@ -53,6 +85,68 @@ def generate_launch_description():
                 description=(
                     "Gazebo Sim world name used when spawning "
                     "Bounding Boxes."
+                ),
+            ),
+            DeclareLaunchArgument(
+                "initial_sync_mode",
+                default_value="blend",
+                description=(
+                    "Use a trajectory transition by default in the Bounding "
+                    "Box mirror world; explicitly select teleport for an "
+                    "instantaneous joint reset."
+                ),
+            ),
+            DeclareLaunchArgument(
+                "robot_ip",
+                default_value="130.149.138.38",
+                description="IP address of the C4G controller.",
+            ),
+            DeclareLaunchArgument(
+                "cmd_port",
+                default_value="8000",
+                description="C4G motion-command TCP port.",
+            ),
+            DeclareLaunchArgument(
+                "control_port",
+                default_value="8002",
+                description="C4G pause/resume/abort TCP port.",
+            ),
+            DeclareLaunchArgument(
+                "feedback_port",
+                default_value="8001",
+                description="C4G joint-feedback TCP port.",
+            ),
+            DeclareLaunchArgument(
+                "c4g_joint_states_topic",
+                default_value="/c4g/joint_states",
+                description="Topic used for C4G joint feedback.",
+            ),
+            DeclareLaunchArgument(
+                "start_arm_tcp_bridge",
+                default_value="true",
+                description="Start the C4G TCP bridge.",
+            ),
+            DeclareLaunchArgument(
+                "enable_motion_control",
+                default_value="true",
+                description=(
+                    "Enable pause/resume/abort and PATH node-wait "
+                    "control services."
+                ),
+            ),
+            DeclareLaunchArgument(
+                "enable_path_protocol",
+                default_value="true",
+                description=(
+                    "Enable C4G PATH upload and PATH sequence execution."
+                ),
+            ),
+            DeclareLaunchArgument(
+                "c4g_protocol_version",
+                default_value="2",
+                description=(
+                    "Use 2 only after deploying the PATH-capable "
+                    "C4G PDL programs."
                 ),
             ),
             base_launch,

@@ -75,6 +75,47 @@ void consider_ratio(double ratio, const std::string& reason, double& largest_rat
   }
 }
 
+bool same_positions(const trajectory_msgs::msg::JointTrajectoryPoint& left,
+                    const trajectory_msgs::msg::JointTrajectoryPoint& right)
+{
+  if (left.positions.size() != right.positions.size())
+    return false;
+  for (std::size_t index = 0; index < left.positions.size(); ++index)
+    if (std::abs(left.positions[index] - right.positions[index]) > 1e-12)
+      return false;
+  return true;
+}
+
+void collapse_zero_duration_duplicate_points(
+    std::vector<trajectory_msgs::msg::JointTrajectoryPoint>& points)
+{
+  std::vector<trajectory_msgs::msg::JointTrajectoryPoint> normalized;
+  normalized.reserve(points.size());
+  for (auto& point : points)
+  {
+    if (normalized.empty())
+    {
+      normalized.push_back(std::move(point));
+      continue;
+    }
+
+    const double delta_time =
+        duration_seconds(point.time_from_start) -
+        duration_seconds(normalized.back().time_from_start);
+    if (std::abs(delta_time) <= 1e-12 &&
+        same_positions(normalized.back(), point))
+    {
+      // Pilz may preserve the coincident end/start samples of adjacent
+      // sequence items. Keep the latter sample's derivative fields while
+      // removing the zero-duration duplicate.
+      normalized.back() = std::move(point);
+      continue;
+    }
+    normalized.push_back(std::move(point));
+  }
+  points = std::move(normalized);
+}
+
 }  // namespace
 
 void validate_speed_settings(const MotionSpeedSettings& settings)
@@ -106,6 +147,8 @@ ScalingResult apply_speed_limits(moveit_msgs::msg::RobotTrajectory& trajectory,
   auto& joint_trajectory = trajectory.joint_trajectory;
   if (joint_trajectory.points.empty())
     throw std::runtime_error("Cannot limit an empty trajectory");
+
+  collapse_zero_duration_duplicate_points(joint_trajectory.points);
 
   const auto indices = joint_indices(joint_trajectory.joint_names);
   double largest_ratio = 1.0;

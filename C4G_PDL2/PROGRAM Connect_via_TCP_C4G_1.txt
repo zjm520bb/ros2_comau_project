@@ -1,0 +1,218 @@
+PROGRAM Connect_via_TCP_C4G_1 NOHOLD
+
+CONST
+  ki_dv_tcp_accept      = 29
+  ki_dv_tcp_connect     = 30
+  ki_dv_tcp_disconnect  = 31
+
+  li_max_message        = 254
+  string_end            = '\010'
+
+  open_retry_delay_ms   = 200
+  connect_poll_ms       = 50
+  connect_timeout_ms    = 3000
+  accept_poll_ms        = 50
+  accept_timeout_ms     = 0
+
+  io_delay_ms           = 50
+  io_timeout_ms         = 1000
+
+  connect_retries       = 3
+  open_retries          = 3
+
+
+ROUTINE connect_to_IP(IP : STRING; PORT : INTEGER) : INTEGER EXPORTED FROM Connect_via_TCP_C4G_1
+ROUTINE disconnect_from(LUN : INTEGER) : INTEGER EXPORTED FROM Connect_via_TCP_C4G_1
+ROUTINE send_to_LUN(LUN : INTEGER; msg : STRING) : INTEGER EXPORTED FROM Connect_via_TCP_C4G_1
+ROUTINE read_from_LUN(LUN : INTEGER) : STRING EXPORTED FROM Connect_via_TCP_C4G_1
+ROUTINE exchange(LUN : INTEGER; msg : STRING) : STRING EXPORTED FROM Connect_via_TCP_C4G_1
+ROUTINE command(LUN : INTEGER; msg, expected_answer : STRING) : INTEGER EXPORTED FROM Connect_via_TCP_C4G_1
+ROUTINE accept_client(client_port : INTEGER) : INTEGER EXPORTED FROM Connect_via_TCP_C4G_1
+
+
+ROUTINE open_nett : INTEGER
+VAR
+  lun : INTEGER
+  i   : INTEGER
+BEGIN
+  lun := 0
+
+  FOR i := 1 TO open_retries DO
+    lun := 0
+    DELAY open_retry_delay_ms
+
+    OPEN FILE lun ('NETT:', 'rw'),
+      WITH $FL_ADLMT = string_end,
+    ENDOPEN
+
+    IF lun <> 0 THEN
+      RETURN(lun)
+    ENDIF
+  ENDFOR
+
+  RETURN(0)
+END open_nett
+
+
+ROUTINE wait_dv_ok(timeout_ms : INTEGER; poll_ms : INTEGER) : BOOLEAN
+VAR
+  elapsed : INTEGER
+BEGIN
+  elapsed := 0
+
+  REPEAT
+    IF $DV_STS = 0 THEN
+      RETURN(TRUE)
+    ENDIF
+
+    DELAY poll_ms
+    elapsed := elapsed + poll_ms
+
+    IF (timeout_ms <> 0) AND (elapsed >= timeout_ms) THEN
+      RETURN(FALSE)
+    ENDIF
+  UNTIL FALSE
+END wait_dv_ok
+
+
+ROUTINE connect_to_IP(IP : STRING; PORT : INTEGER) : INTEGER
+VAR
+  lun     : INTEGER
+  attempt : INTEGER
+BEGIN
+  FOR attempt := 1 TO connect_retries DO
+    lun := open_nett
+
+    IF lun <> 0 THEN
+      DV4_CNTRL( ki_dv_tcp_connect, (lun), (IP), (PORT) )
+
+      IF wait_dv_ok(connect_timeout_ms, connect_poll_ms) THEN
+        WRITE LUN_CRT ( '[TCP] Connected to ', IP, ':', PORT, ' LUN=', lun, NL )
+
+        RETURN(lun)
+      ELSE
+        WRITE LUN_CRT ( '[TCP] Connect timeout/fail attempt ', attempt, NL )
+
+        CLOSE FILE lun
+      ENDIF
+    ELSE
+      WRITE LUN_CRT ( '[TCP] OPEN NETT failed attempt ', attempt, NL )
+    ENDIF
+  ENDFOR
+
+  RETURN(-1)
+END connect_to_IP
+
+
+ROUTINE accept_client(client_port : INTEGER) : INTEGER
+VAR
+  lun : INTEGER
+BEGIN
+  lun := open_nett
+
+  IF lun = 0 THEN
+    WRITE LUN_CRT ('[TCP] OPEN NETT failed', NL)
+    RETURN(-1)
+  ENDIF
+
+  DV4_CNTRL( ki_dv_tcp_accept, (lun), (client_port) )
+
+  IF wait_dv_ok(accept_timeout_ms, accept_poll_ms) THEN
+    WRITE LUN_CRT ( '[TCP] Client accepted on port ', client_port, ' LUN=', lun, NL )
+
+    RETURN(lun)
+  ELSE
+    WRITE LUN_CRT ( '[TCP] Accept timeout/fail on port ', client_port, NL )
+
+    CLOSE FILE lun
+    RETURN(-1)
+  ENDIF
+END accept_client
+
+
+ROUTINE send_to_LUN(LUN : INTEGER; msg : STRING) : INTEGER
+BEGIN
+  IF LUN = 0 THEN
+    RETURN(-1)
+  ENDIF
+
+  WRITE LUN (msg)
+
+  RETURN(0)
+END send_to_LUN
+
+
+ROUTINE read_from_LUN(LUN : INTEGER) : STRING
+VAR
+  s : STRING[li_max_message]
+BEGIN
+  s := ''
+
+  IF LUN = 0 THEN
+    RETURN(s)
+  ENDIF
+
+  READ LUN (s)
+
+  RETURN(s)
+END read_from_LUN
+
+
+ROUTINE exchange(LUN : INTEGER; msg : STRING) : STRING
+VAR
+  answer : STRING[li_max_message]
+BEGIN
+  answer := ''
+
+  IF send_to_LUN(LUN, msg) <> 0 THEN
+    RETURN(answer)
+  ENDIF
+
+  DELAY io_timeout_ms
+  answer := read_from_LUN(LUN)
+
+  RETURN(answer)
+END exchange
+
+
+ROUTINE command(LUN : INTEGER; msg, expected_answer : STRING) : INTEGER
+VAR
+  answer : STRING[li_max_message]
+BEGIN
+  answer := exchange(LUN, msg)
+
+  IF answer = expected_answer THEN
+    RETURN(0)
+  ELSE
+    WRITE LUN_CRT ( '[TCP] ACK mismatch. Expected=', expected_answer, ' Got=', answer, NL )
+
+    WRITE LUN_TP ( '[TCP] ACK mismatch. Expected=', expected_answer, ' Got=', answer, NL )
+
+    RETURN(-1)
+  ENDIF
+END command
+
+
+ROUTINE disconnect_from(LUN : INTEGER) : INTEGER
+BEGIN
+  IF LUN = 0 THEN
+    RETURN(0)
+  ENDIF
+
+  DV4_CNTRL( ki_dv_tcp_disconnect, (LUN) )
+
+  CLOSE FILE LUN
+
+  WRITE LUN_CRT ( '[TCP] LUN ', LUN, ' disconnected', NL )
+
+  WRITE LUN_TP ( '[TCP] LUN ', LUN, ' disconnected', NL )
+
+  RETURN(0)
+END disconnect_from
+
+
+BEGIN
+  WRITE LUN_CRT ( 'Connect_via_TCP_C4G_1 ready', NL )
+
+  WRITE LUN_TP ( 'Connect_via_TCP_C4G_1 ready', NL )
+END Connect_via_TCP_C4G_1

@@ -1,0 +1,7 @@
+uint32 path_id
+---
+bool known
+string state
+uint32 current_node
+bool waiting
+string message
