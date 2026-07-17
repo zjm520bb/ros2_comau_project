@@ -18,3 +18,19 @@ venv/
 .idea/
 
 *.log
+
+# Local notes / drafts / external reference files
+/4.md
+/*.docx
+/*.pdf
+/*.prt
+/AQuaPro Integrated Specimen_V5_20260320 1.stl
+
+# Runtime recordings are large generated data; keep them local.
+records/
+*.db3
+
+# Keep only the final path program and the plain-command runner in Git.
+path_programs/*
+!path_programs/program_04.c4gseq.yaml
+!path_programs/run_program_04_all_plain_commands.sh

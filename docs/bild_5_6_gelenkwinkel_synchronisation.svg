@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="160mm" height="230mm" viewBox="0 0 1600 2300">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#000000"/>
+    </marker>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; fill: #000000; }
+      .title { font-size: 40px; font-weight: 700; }
+      .box-title { font-size: 39px; font-weight: 700; }
+      .box-text { font-size: 39px; }
+      .small { font-size: 37px; }
+      .box { fill: #ffffff; stroke: #000000; stroke-width: 3.5; rx: 10; ry: 10; }
+      .dashed { fill: #ffffff; stroke: #000000; stroke-width: 3.5; stroke-dasharray: 14 10; rx: 10; ry: 10; }
+      .line { stroke: #000000; stroke-width: 5; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect x="28" y="25" width="1544" height="2240" class="box"/>
+  <text x="800" y="95" class="title" text-anchor="middle">Rückführung realer Gelenkwinkel und Synchronisation in Gazebo</text>
+
+  <rect x="70" y="145" width="430" height="220" class="box"/>
+  <text x="285" y="232" class="box-title" text-anchor="middle">C4G-Steuerung</text>
+  <text x="285" y="304" class="box-text" text-anchor="middle">ARM_JNTP(1)</text>
+
+  <rect x="585" y="145" width="430" height="220" class="box"/>
+  <text x="800" y="222" class="box-title" text-anchor="middle">PDL2-Feedback</text>
+  <text x="800" y="290" class="box-text" text-anchor="middle">ROS2_JOINT</text>
+  <text x="800" y="350" class="box-text" text-anchor="middle">FEEDBACK_1</text>
+
+  <rect x="1100" y="145" width="430" height="220" class="box"/>
+  <text x="1315" y="232" class="box-title" text-anchor="middle">TCP-Rückkanal</text>
+  <text x="1315" y="304" class="box-text" text-anchor="middle">JOINTS:a1,...,a6</text>
+
+  <path d="M 500 255 L 585 255" class="line"/>
+  <path d="M 1015 255 L 1100 255" class="line"/>
+
+  <rect x="70" y="500" width="500" height="240" class="box"/>
+  <text x="320" y="577" class="box-title" text-anchor="middle">comau_joint_feedback</text>
+  <text x="320" y="647" class="box-text" text-anchor="middle">Prüfung und Umrechnung</text>
+  <text x="320" y="712" class="box-text" text-anchor="middle">Grad zu Radiant</text>
+
+  <rect x="620" y="500" width="430" height="240" class="box"/>
+  <text x="835" y="577" class="box-title" text-anchor="middle">/c4g/joint_states</text>
+  <text x="835" y="647" class="box-text" text-anchor="middle">JointState</text>
+  <text x="835" y="712" class="box-text" text-anchor="middle">joint_1 bis joint_6</text>
+
+  <rect x="1100" y="500" width="430" height="240" class="box"/>
+  <text x="1315" y="577" class="box-title" text-anchor="middle">c4g_gazebo_sync</text>
+  <text x="1315" y="647" class="box-text" text-anchor="middle">Zustandsabgleich</text>
+  <text x="1315" y="712" class="box-text" text-anchor="middle">und Live-Sync</text>
+
+  <path d="M 1315 365 L 1315 425 L 320 425 L 320 500" class="line"/>
+  <path d="M 570 620 L 620 620" class="line"/>
+  <path d="M 1050 620 L 1100 620" class="line"/>
+
+  <rect x="70" y="895" width="650" height="300" class="dashed"/>
+  <text x="395" y="977" class="box-title" text-anchor="middle">Berechnung der</text>
+  <text x="395" y="1042" class="box-title" text-anchor="middle">gekoppelten Modellgelenke</text>
+  <text x="395" y="1112" class="box-text" text-anchor="middle">joint_7 = joint_2 + joint_3 + 1,5708</text>
+  <text x="395" y="1172" class="box-text" text-anchor="middle">joint_8 = -joint_7</text>
+
+  <rect x="820" y="895" width="340" height="260" class="box"/>
+  <text x="990" y="987" class="box-title" text-anchor="middle">Initialer Abgleich</text>
+  <text x="990" y="1062" class="box-text" text-anchor="middle">teleport</text>
+  <text x="990" y="1122" class="box-text" text-anchor="middle">oder blend</text>
+
+  <rect x="1210" y="895" width="320" height="260" class="box"/>
+  <text x="1370" y="987" class="box-title" text-anchor="middle">ResetJoints</text>
+  <text x="1370" y="1060" class="box-text" text-anchor="middle">Position und</text>
+  <text x="1370" y="1124" class="box-text" text-anchor="middle">Geschwindigkeit</text>
+
+  <path d="M 1315 740 L 1315 810 L 395 810 L 395 895" class="line"/>
+  <path d="M 1315 740 L 1315 810 L 990 810 L 990 895" class="line"/>
+  <path d="M 1160 1025 L 1210 1025" class="line"/>
+
+  <rect x="420" y="1350" width="470" height="240" class="box"/>
+  <text x="655" y="1432" class="box-title" text-anchor="middle">Live-Synchronisation</text>
+  <text x="655" y="1507" class="box-text" text-anchor="middle">kurze</text>
+  <text x="655" y="1567" class="box-text" text-anchor="middle">JointTrajectory</text>
+
+  <rect x="980" y="1350" width="430" height="240" class="box"/>
+  <text x="1195" y="1432" class="box-title" text-anchor="middle">Gazebo-Controller</text>
+  <text x="1195" y="1507" class="box-text" text-anchor="middle">/arm_controller</text>
+
+  <path d="M 990 1155 L 990 1260 L 655 1260 L 655 1350" class="line"/>
+  <path d="M 1370 1155 L 1370 1260 L 1195 1260 L 1195 1350" class="line"/>
+  <path d="M 890 1470 L 980 1470" class="line"/>
+
+  <rect x="300" y="1760" width="1000" height="210" class="box"/>
+  <text x="800" y="1847" class="box-title" text-anchor="middle">Digitaler Zwilling in Gazebo</text>
+  <text x="800" y="1917" class="box-text" text-anchor="middle">sichtbare Stellung folgt realen Gelenkwinkeln</text>
+
+  <path d="M 1195 1590 L 1195 1675 L 800 1675 L 800 1760" class="line"/>
+  <path d="M 395 1195 L 395 1675 L 640 1675 L 640 1760" class="line"/>
+
+  <rect x="150" y="2085" width="1300" height="135" class="dashed"/>
+  <text x="800" y="2142" class="small" text-anchor="middle">Bei veralteter C4G-Rückmeldung wird kein neuer</text>
+  <text x="800" y="2192" class="small" text-anchor="middle">Gazebo-Zielwert veröffentlicht.</text>
+</svg>

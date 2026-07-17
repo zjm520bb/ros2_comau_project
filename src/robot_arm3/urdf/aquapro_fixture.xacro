@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!--
+    Fixed AQuaPro grinding fixture.
+
+    Coordinate convention:
+      * the 320 mm rod leaves the calibrated C4G flange along its +Z axis;
+      * the STL is in millimetres and its largest planar face is z = 0;
+      * tcp_link is at the centre of that face (raw STL: 0, 7.5, 0 mm),
+        with tcp +Z pointing out of the workpiece process face.
+
+    The rod diameter and the flange mounting transform are deliberately
+    parameters: replace their defaults with the measured fixture values
+    before using the model on hardware.
+  -->
+  <xacro:macro name="aquapro_fixture"
+               params="flange_xyz flange_rpy rod_length rod_radius specimen_mass">
+    <xacro:property name="rod_half_length" value="${float(rod_length) / 2.0}" />
+    <xacro:property name="rod_mass" value="0.79" />
+    <xacro:property name="specimen_thickness" value="0.020" />
+
+    <link name="fixture_rod_link">
+      <inertial>
+        <origin xyz="0 0 ${rod_half_length}" rpy="0 0 0" />
+        <mass value="${rod_mass}" />
+        <!-- 320 mm x 20 mm steel rod approximation. -->
+        <inertia ixx="0.00675" ixy="0" ixz="0" iyy="0.00675" iyz="0" izz="0.00004" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 ${rod_half_length}" rpy="0 0 0" />
+        <geometry>
+          <cylinder radius="${rod_radius}" length="${rod_length}" />
+        </geometry>
+        <material name="fixture_steel">
+          <color rgba="0.30 0.32 0.35 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 ${rod_half_length}" rpy="0 0 0" />
+        <geometry>
+          <cylinder radius="${rod_radius}" length="${rod_length}" />
+        </geometry>
+      </collision>
+    </link>
+    <joint name="flange_to_fixture_rod" type="fixed">
+      <origin xyz="${flange_xyz}" rpy="${flange_rpy}" />
+      <parent link="c4g_flange_link" />
+      <child link="fixture_rod_link" />
+    </joint>
+
+    <link name="aquapro_workpiece_link">
+      <inertial>
+        <origin xyz="0 0.0075 0.010" rpy="0 0 0" />
+        <mass value="${specimen_mass}" />
+        <inertia ixx="0.00050" ixy="0" ixz="0" iyy="0.00050" iyz="0" izz="0.00050" />
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="package://robot_arm3/meshes/aquapro_specimen.stl"
+                scale="0.001 0.001 0.001" />
+        </geometry>
+        <material name="aquapro_aluminium">
+          <color rgba="0.72 0.74 0.77 1" />
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://robot_arm3/meshes/aquapro_specimen.stl"
+                scale="0.001 0.001 0.001" />
+        </geometry>
+      </collision>
+    </link>
+    <joint name="fixture_rod_to_aquapro_workpiece" type="fixed">
+      <!--
+        The rod terminates at the requested main-body centre, raw
+        (0, 0, 10) mm.  Raw z=0 remains the outward process face, so the
+        face TCP is 10 mm beyond the rod endpoint.
+      -->
+      <origin xyz="0 0 ${float(rod_length) + 0.010}" rpy="3.141592653589793 0 0" />
+      <parent link="fixture_rod_link" />
+      <child link="aquapro_workpiece_link" />
+    </joint>
+
+    <link name="tcp_link" />
+    <joint name="aquapro_workpiece_to_tcp" type="fixed">
+      <!-- Face centre from the STL bounds: x=0, y=7.5 mm, z=0. -->
+      <origin xyz="0 0.0075 0" rpy="0 3.141592653589793 0" />
+      <parent link="aquapro_workpiece_link" />
+      <child link="tcp_link" />
+    </joint>
+  </xacro:macro>
+</robot>

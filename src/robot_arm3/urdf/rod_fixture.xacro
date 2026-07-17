@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!--
+    Cylindrical steel bar fixture.
+
+    The bar starts at the calibrated C4G flange frame and extends along its
+    +Z axis.  tcp_link is fixed at the free (furthest) end of the bar.  With
+    the default parameters, that TCP is exactly 570 mm beyond the original
+    flange TCP, and the bar diameter is 26 mm.
+  -->
+  <xacro:macro name="rod_fixture" params="flange_xyz flange_rpy rod_length rod_radius">
+    <xacro:property name="rod_half_length" value="${float(rod_length) / 2.0}" />
+    <!-- Solid steel approximation; density is 7850 kg/m^3. -->
+    <xacro:property name="rod_mass"
+                    value="${7850.0 * 3.141592653589793 * float(rod_radius) * float(rod_radius) * float(rod_length)}" />
+    <xacro:property name="rod_inertia_transverse"
+                    value="${rod_mass * (3.0 * float(rod_radius) * float(rod_radius) + float(rod_length) * float(rod_length)) / 12.0}" />
+    <xacro:property name="rod_inertia_axial"
+                    value="${rod_mass * float(rod_radius) * float(rod_radius) / 2.0}" />
+
+    <link name="fixture_rod_link">
+      <inertial>
+        <origin xyz="0 0 ${rod_half_length}" rpy="0 0 0" />
+        <mass value="${rod_mass}" />
+        <inertia ixx="${rod_inertia_transverse}" ixy="0" ixz="0"
+                 iyy="${rod_inertia_transverse}" iyz="0" izz="${rod_inertia_axial}" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 ${rod_half_length}" rpy="0 0 0" />
+        <geometry>
+          <cylinder radius="${rod_radius}" length="${rod_length}" />
+        </geometry>
+        <material name="fixture_steel">
+          <color rgba="0.30 0.32 0.35 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 ${rod_half_length}" rpy="0 0 0" />
+        <geometry>
+          <cylinder radius="${rod_radius}" length="${rod_length}" />
+        </geometry>
+      </collision>
+    </link>
+    <joint name="flange_to_fixture_rod" type="fixed">
+      <origin xyz="${flange_xyz}" rpy="${flange_rpy}" />
+      <parent link="c4g_flange_link" />
+      <child link="fixture_rod_link" />
+    </joint>
+
+    <!-- The free endpoint of the 570 mm bar is the active tool TCP. -->
+    <link name="tcp_link" />
+    <joint name="fixture_rod_to_tcp" type="fixed">
+      <origin xyz="0 0 ${rod_length}" rpy="0 0 0" />
+      <parent link="fixture_rod_link" />
+      <child link="tcp_link" />
+    </joint>
+  </xacro:macro>
+</robot>

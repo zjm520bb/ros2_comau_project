@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="160mm" height="220mm" viewBox="0 0 1600 2200">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#000000"/>
+    </marker>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; fill: #000000; }
+      .title { font-size: 40px; font-weight: 700; }
+      .box-title { font-size: 41px; font-weight: 700; }
+      .box-text { font-size: 39px; }
+      .small { font-size: 37px; }
+      .box { fill: #ffffff; stroke: #000000; stroke-width: 3.5; rx: 12; ry: 12; }
+      .dashed { fill: #ffffff; stroke: #000000; stroke-width: 3.5; stroke-dasharray: 14 10; rx: 12; ry: 12; }
+      .line { stroke: #000000; stroke-width: 5; fill: none; marker-end: url(#arrow); }
+      .plain { stroke: #000000; stroke-width: 5; fill: none; }
+    </style>
+  </defs>
+
+  <rect x="28" y="25" width="1544" height="2145" fill="#ffffff" stroke="#000000" stroke-width="3.5" rx="14" ry="14"/>
+  <text x="800" y="82" class="title" text-anchor="middle">Generierung und Freigabe von PATH-Strukturen aus der Simulation</text>
+
+  <rect x="220" y="125" width="1160" height="130" class="box"/>
+  <text x="800" y="176" class="box-title" text-anchor="middle">start_recording</text>
+  <text x="800" y="222" class="box-text" text-anchor="middle">Aufnahme für neue PATH-Entwürfe aktivieren</text>
+  <path d="M 800 255 L 800 305" class="line"/>
+
+  <rect x="220" y="305" width="1160" height="135" class="box"/>
+  <text x="800" y="358" class="box-title" text-anchor="middle">MoveIt-2-Planung</text>
+  <text x="800" y="404" class="box-text" text-anchor="middle">Trajektorie aus Bewegungsbefehl oder PATH</text>
+  <path d="M 800 440 L 800 490" class="line"/>
+
+  <rect x="220" y="490" width="1160" height="135" class="box"/>
+  <text x="800" y="543" class="box-title" text-anchor="middle">Gazebo-Ausführung und Segment-Preview</text>
+  <text x="800" y="589" class="box-text" text-anchor="middle">visuelle und funktionale Prüfung des Entwurfs</text>
+  <path d="M 800 625 L 800 675" class="line"/>
+
+  <rect x="220" y="675" width="1160" height="135" class="box"/>
+  <text x="800" y="728" class="box-title" text-anchor="middle">PATH-Entwurf</text>
+  <text x="800" y="774" class="box-text" text-anchor="middle">PathBlock auf /offline/prepared_path</text>
+  <path d="M 800 810 L 800 860" class="line"/>
+
+  <rect x="220" y="860" width="1160" height="150" class="box"/>
+  <text x="800" y="915" class="box-title" text-anchor="middle">Draft-Einstellungen vor der Freigabe</text>
+  <text x="800" y="962" class="box-text" text-anchor="middle">set_draft_end_wait oder set_draft_wait_after</text>
+  <path d="M 800 1010 L 800 1060" class="line"/>
+
+  <polygon points="800,1060 1045,1205 800,1350 555,1205" class="box"/>
+  <text x="800" y="1190" class="box-title" text-anchor="middle">Entwurf</text>
+  <text x="800" y="1242" class="box-title" text-anchor="middle">freigeben?</text>
+
+  <path d="M 555 1205 L 350 1205 L 350 1395" class="line"/>
+  <path d="M 1045 1205 L 1250 1205 L 1250 1395" class="line"/>
+  <text x="456" y="1165" class="small" text-anchor="middle">ja</text>
+  <text x="1144" y="1165" class="small" text-anchor="middle">nein</text>
+
+  <rect x="95" y="1395" width="510" height="150" class="box"/>
+  <text x="350" y="1450" class="box-title" text-anchor="middle">accept_draft</text>
+  <text x="350" y="1498" class="box-text" text-anchor="middle">Entwurf übernehmen</text>
+
+  <rect x="995" y="1395" width="510" height="150" class="box"/>
+  <text x="1250" y="1450" class="box-title" text-anchor="middle">reject_draft</text>
+  <text x="1250" y="1498" class="box-text" text-anchor="middle">Entwurf verwerfen</text>
+
+  <path d="M 350 1545 L 350 1595 L 800 1595 L 800 1620" class="line"/>
+
+  <rect x="220" y="1620" width="1160" height="145" class="box"/>
+  <text x="800" y="1675" class="box-title" text-anchor="middle">Offline-Sequenzmanager</text>
+  <text x="800" y="1724" class="box-text" text-anchor="middle">akzeptierte PathBlocks sammeln und verwalten</text>
+
+  <path d="M 800 1765 L 800 1788 L 255 1788 L 255 1815" class="line"/>
+
+  <rect x="95" y="1815" width="320" height="145" class="box"/>
+  <text x="255" y="1870" class="box-title" text-anchor="middle">stop_recording</text>
+  <text x="255" y="1920" class="box-text" text-anchor="middle">Aufnahme Ende</text>
+
+  <rect x="465" y="1815" width="320" height="145" class="box"/>
+  <text x="625" y="1870" class="box-title" text-anchor="middle">preview_all</text>
+  <text x="625" y="1920" class="box-text" text-anchor="middle">Gesamttest</text>
+
+  <rect x="835" y="1815" width="320" height="145" class="box"/>
+  <text x="995" y="1870" class="box-title" text-anchor="middle">export</text>
+  <text x="995" y="1920" class="box-text" text-anchor="middle">.c4gseq.yaml</text>
+
+  <rect x="1205" y="1815" width="300" height="145" class="box"/>
+  <text x="1355" y="1870" class="box-title" text-anchor="middle">send</text>
+  <text x="1355" y="1920" class="box-text" text-anchor="middle">C4G</text>
+
+  <path d="M 415 1888 L 455 1888" class="line"/>
+  <path d="M 785 1888 L 825 1888" class="line"/>
+  <path d="M 1155 1888 L 1195 1888" class="line"/>
+
+  <rect x="180" y="2055" width="1240" height="75" class="dashed"/>
+  <text x="800" y="2105" class="small" text-anchor="middle">Vor realer Ausführung: Prüfung der erwarteten Startachsenstellung</text>
+</svg>

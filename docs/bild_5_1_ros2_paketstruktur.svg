@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16cm" height="30.48cm" viewBox="0 0 1890 3600">
+<rect width="1890" height="3600" fill="white"/>
+<defs><marker id="arrow" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto" markerUnits="strokeWidth"><path d="M 0 0 L 14 7 L 0 14 z" fill="#151515"/></marker></defs>
+<style>.title{font-family:Arial, Liberation Sans, Helvetica, sans-serif;font-size:14.4pt;font-weight:700;fill:#151515}.body{font-family:Arial, Liberation Sans, Helvetica, sans-serif;font-size:11pt;fill:#151515}.bold{font-family:Arial, Liberation Sans, Helvetica, sans-serif;font-size:11.5pt;font-weight:700;fill:#151515}</style>
+<text class="title" x="945.0" y="90" text-anchor="middle">Gesamtstruktur der ROS-2-Pakete</text>
+<text class="title" x="945.0" y="168" text-anchor="middle">der Automatisierungsarchitektur</text>
+<rect x="55" y="230" width="1780" height="465" rx="20" fill="white" stroke="#151515" stroke-width="3"/>
+<text class="bold" x="100.0" y="313.9" text-anchor="start">Schnittstellenbasis</text>
+<rect x="55" y="765" width="1780" height="465" rx="20" fill="white" stroke="#151515" stroke-width="3"/>
+<text class="bold" x="100.0" y="848.9" text-anchor="start">Reale Roboterkommunikation</text>
+<rect x="55" y="1300" width="1780" height="465" rx="20" fill="white" stroke="#151515" stroke-width="3"/>
+<text class="bold" x="100.0" y="1383.9" text-anchor="start">Digitaler Zwilling und Bewegungsplanung</text>
+<rect x="55" y="1835" width="1780" height="465" rx="20" fill="white" stroke="#151515" stroke-width="3"/>
+<text class="bold" x="100.0" y="1918.9" text-anchor="start">Peripherie und Sensorik</text>
+<rect x="55" y="2370" width="1780" height="465" rx="20" fill="white" stroke="#151515" stroke-width="3"/>
+<text class="bold" x="100.0" y="2453.9" text-anchor="start">Datenaufzeichnung und Analyse</text>
+<line x1="945.0" y1="703" x2="945.0" y2="749" stroke="#151515" stroke-width="5" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="945.0" y1="1238" x2="945.0" y2="1284" stroke="#151515" stroke-width="5" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="945.0" y1="1773" x2="945.0" y2="1819" stroke="#151515" stroke-width="5" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="945.0" y1="2308" x2="945.0" y2="2354" stroke="#151515" stroke-width="5" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="130" y="395" width="735" height="210" rx="18" fill="white" stroke="#151515" stroke-width="3"/>
+<text class="bold" x="497.5" y="445.9" text-anchor="middle">arm_tcp_bridge_interfaces</text>
+<text class="body" x="497.5" y="511.9" text-anchor="middle">Actions, Services</text>
+<text class="body" x="497.5" y="577.9" text-anchor="middle">und Messages</text>
+<rect x="1025" y="395" width="735" height="210" rx="18" fill="white" stroke="#151515" stroke-width="3"/>
+<text class="bold" x="1392.5" y="445.9" text-anchor="middle">peripheral_interfaces</text>
+<text class="body" x="1392.5" y="511.9" text-anchor="middle">Peripheriebefehle</text>
+<text class="body" x="1392.5" y="577.9" text-anchor="middle">und Zustände</text>
+<rect x="110" y="935" width="500" height="210" rx="18" fill="white" stroke="#151515" stroke-width="3"/>
+<text class="bold" x="360.0" y="985.9" text-anchor="middle">arm_tcp_bridge</text>
+<text class="body" x="360.0" y="1051.9" text-anchor="middle">TCP-Kommunikation</text>
+<text class="body" x="360.0" y="1117.9" text-anchor="middle">zum C4G</text>
+<rect x="680" y="935" width="500" height="210" rx="18" fill="white" stroke="#151515" stroke-width="3"/>
+<text class="bold" x="930.0" y="985.9" text-anchor="middle">motion_control_node</text>
+<text class="body" x="930.0" y="1051.9" text-anchor="middle">Befehle</text>
+<text class="body" x="930.0" y="1117.9" text-anchor="middle">und Feedback</text>
+<rect x="1250" y="935" width="560" height="210" rx="18" fill="white" stroke="#151515" stroke-width="3" stroke-dasharray="14 10"/>
+<text class="bold" x="1530.0" y="985.9" text-anchor="middle">Comau C4G</text>
+<text class="body" x="1530.0" y="1051.9" text-anchor="middle">Controller</text>
+<text class="body" x="1530.0" y="1117.9" text-anchor="middle">reale Robotersteuerung</text>
+<line x1="610" y1="1040" x2="680" y2="1040" stroke="#151515" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="1180" y1="1040" x2="1250" y2="1040" stroke="#151515" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="90" y="1470" width="390" height="210" rx="18" fill="white" stroke="#151515" stroke-width="3"/>
+<text class="bold" x="285.0" y="1520.9" text-anchor="middle">robot_arm3</text>
+<text class="body" x="285.0" y="1586.9" text-anchor="middle">URDF/Xacro</text>
+<text class="body" x="285.0" y="1652.9" text-anchor="middle">Gazebo-Modell</text>
+<rect x="520" y="1470" width="390" height="210" rx="18" fill="white" stroke="#151515" stroke-width="3"/>
+<text class="bold" x="715.0" y="1520.9" text-anchor="middle">robot_arm3</text>
+<text class="body" x="715.0" y="1586.9" text-anchor="middle">moveit_config</text>
+<text class="body" x="715.0" y="1652.9" text-anchor="middle">MoveIt 2</text>
+<rect x="950" y="1470" width="390" height="210" rx="18" fill="white" stroke="#151515" stroke-width="3"/>
+<text class="bold" x="1145.0" y="1520.9" text-anchor="middle">robot_arm3</text>
+<text class="body" x="1145.0" y="1586.9" text-anchor="middle">moveit_control</text>
+<text class="body" x="1145.0" y="1652.9" text-anchor="middle">Planung / PATH</text>
+<rect x="1380" y="1470" width="390" height="210" rx="18" fill="white" stroke="#151515" stroke-width="3" stroke-dasharray="14 10"/>
+<text class="bold" x="1575.0" y="1520.9" text-anchor="middle">Gazebo / RViz</text>
+<text class="body" x="1575.0" y="1586.9" text-anchor="middle">Ausführung</text>
+<text class="body" x="1575.0" y="1652.9" text-anchor="middle">Visualisierung</text>
+<line x1="480" y1="1575" x2="520" y2="1575" stroke="#151515" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="910" y1="1575" x2="950" y2="1575" stroke="#151515" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="1340" y1="1575" x2="1380" y2="1575" stroke="#151515" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="120" y="2005" width="500" height="210" rx="18" fill="white" stroke="#151515" stroke-width="3"/>
+<text class="bold" x="370.0" y="2055.9" text-anchor="middle">robot_arm3</text>
+<text class="body" x="370.0" y="2121.9" text-anchor="middle">peripherals</text>
+<text class="body" x="370.0" y="2187.9" text-anchor="middle">Geräte / Prozesse</text>
+<rect x="695" y="2005" width="500" height="210" rx="18" fill="white" stroke="#151515" stroke-width="3"/>
+<text class="bold" x="945.0" y="2055.9" text-anchor="middle">robot_arm3</text>
+<text class="body" x="945.0" y="2121.9" text-anchor="middle">sensors</text>
+<text class="body" x="945.0" y="2187.9" text-anchor="middle">Sensorzustände</text>
+<rect x="1270" y="2005" width="500" height="210" rx="18" fill="white" stroke="#151515" stroke-width="3"/>
+<text class="bold" x="1520.0" y="2055.9" text-anchor="middle">process</text>
+<text class="body" x="1520.0" y="2121.9" text-anchor="middle">orchestrator</text>
+<text class="body" x="1520.0" y="2187.9" text-anchor="middle">Ablaufsteuerung</text>
+<line x1="620" y1="2110" x2="695" y2="2110" stroke="#151515" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="1195" y1="2110" x2="1270" y2="2110" stroke="#151515" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="210" y="2540" width="620" height="210" rx="18" fill="white" stroke="#151515" stroke-width="3"/>
+<text class="bold" x="520.0" y="2590.9" text-anchor="middle">robot_arm3</text>
+<text class="body" x="520.0" y="2656.9" text-anchor="middle">data_recording</text>
+<text class="body" x="520.0" y="2722.9" text-anchor="middle">record_real / record_sim</text>
+<rect x="1060" y="2540" width="620" height="210" rx="18" fill="white" stroke="#151515" stroke-width="3" stroke-dasharray="14 10"/>
+<text class="bold" x="1370.0" y="2590.9" text-anchor="middle">rosbag2</text>
+<text class="body" x="1370.0" y="2656.9" text-anchor="middle">Aufzeichnung</text>
+<text class="body" x="1370.0" y="2722.9" text-anchor="middle">Offline-Analyse</text>
+<line x1="830" y1="2645" x2="1060" y2="2645" stroke="#151515" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="235" y="2920" width="1420" height="240" rx="18" fill="white" stroke="#151515" stroke-width="3"/>
+<text class="body" x="945.0" y="2985.9" text-anchor="middle">durchgezogene Boxen: eigene ROS-2-Pakete</text>
+<text class="body" x="945.0" y="3051.9" text-anchor="middle">gestrichelte Boxen: externe Systeme oder Werkzeuge</text>
+<text class="body" x="945.0" y="3117.9" text-anchor="middle">vertikale Pfeile: funktionale Hauptabfolge der Architektur</text>
+</svg>

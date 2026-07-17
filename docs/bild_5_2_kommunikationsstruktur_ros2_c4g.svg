@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16cm" height="11.43cm" viewBox="0 0 1890 1350">
+<rect width="100%" height="100%" fill="white"/>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="black"/></marker><marker id="arrowStart" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M9,0 L9,6 L0,3 z" fill="black"/></marker></defs>
+<rect x="65" y="55" width="660" height="1165" rx="12" ry="12" fill="white" stroke="black" stroke-width="3"/>
+<rect x="1165" y="55" width="660" height="1165" rx="12" ry="12" fill="white" stroke="black" stroke-width="3"/>
+<rect x="65" y="55" width="660" height="90" fill="#ebebeb" stroke="black" stroke-width="3"/>
+<rect x="1165" y="55" width="660" height="90" fill="#ebebeb" stroke="black" stroke-width="3"/>
+<text x="395.0" y="115.36" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="48px" font-weight="bold" fill="black">ROS-2-System</text>
+<text x="1495.0" y="115.36" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="48px" font-weight="bold" fill="black">Comau-C4G-Controller</text>
+<rect x="99" y="195" width="592" height="215" rx="10" ry="10" fill="#f8f8f8" stroke="black" stroke-width="3"/>
+<rect x="1199" y="195" width="592" height="215" rx="10" ry="10" fill="#f8f8f8" stroke="black" stroke-width="3"/>
+<text x="395.0" y="233.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="bold" fill="black">arm_execute_action</text>
+<text x="395.0" y="288.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="bold" fill="black">server</text>
+<text x="395.0" y="343.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">/arm/execute</text>
+<text x="395.0" y="398.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">/arm/execute_path</text>
+<text x="1495.0" y="261.26" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="bold" fill="black">PDL2_ROS2_main_1</text>
+<text x="1495.0" y="316.26" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">Befehl, Echo, Start</text>
+<text x="1495.0" y="371.26" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">Ergebnis</text>
+<rect x="99" y="485" width="592" height="215" rx="10" ry="10" fill="#f8f8f8" stroke="black" stroke-width="3"/>
+<rect x="1199" y="485" width="592" height="215" rx="10" ry="10" fill="#f8f8f8" stroke="black" stroke-width="3"/>
+<text x="395.0" y="578.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="bold" fill="black">comau_joint_feedback</text>
+<text x="395.0" y="633.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">reale Gelenkwinkel</text>
+<text x="1495.0" y="523.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="bold" fill="black">ROS2_JOINT</text>
+<text x="1495.0" y="578.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="bold" fill="black">FEEDBACK_1</text>
+<text x="1495.0" y="633.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">sendet JOINTS:</text>
+<text x="1495.0" y="688.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">zyklisch</text>
+<rect x="99" y="775" width="592" height="215" rx="10" ry="10" fill="#f8f8f8" stroke="black" stroke-width="3"/>
+<rect x="1199" y="775" width="592" height="215" rx="10" ry="10" fill="#f8f8f8" stroke="black" stroke-width="3"/>
+<text x="395.0" y="841.26" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="bold" fill="black">comau_motion_control</text>
+<text x="395.0" y="896.26" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">Pause / Resume / Abort</text>
+<text x="395.0" y="951.26" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">PATH-Signale</text>
+<text x="1495.0" y="813.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="bold" fill="black">ROS2_MOTION</text>
+<text x="1495.0" y="868.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="bold" fill="black">COMMAND_1</text>
+<text x="1495.0" y="923.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">Ereignisse</text>
+<text x="1495.0" y="978.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">PATH-Zustand</text>
+<rect x="99" y="1070" width="592" height="125" rx="10" ry="10" fill="#f8f8f8" stroke="black" stroke-width="3"/>
+<rect x="1199" y="1070" width="592" height="125" rx="10" ry="10" fill="#f8f8f8" stroke="black" stroke-width="3"/>
+<text x="395.0" y="1118.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="bold" fill="black">TcpClient</text>
+<text x="395.0" y="1173.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">ASCII + Zeilenende</text>
+<text x="1495.0" y="1118.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="bold" fill="black">Connect_via_TCP_C4G_1</text>
+<text x="1495.0" y="1173.76" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">TCP-Routinen</text>
+<line x1="691" y1="302.5" x2="1199" y2="302.5" stroke="black" stroke-width="4" marker-end="url(#arrow)" marker-start="url(#arrowStart)"/>
+<line x1="1199" y1="592.5" x2="691" y2="592.5" stroke="black" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="691" y1="882.5" x2="1199" y2="882.5" stroke="black" stroke-width="4" marker-end="url(#arrow)" marker-start="url(#arrowStart)"/>
+<rect x="730.0" y="230.0" width="430" height="145" rx="8" ry="8" fill="white" stroke="black" stroke-width="2"/>
+<text x="945.0" y="265.26" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="bold" fill="black">Port 8000</text>
+<text x="945.0" y="316.26" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">Befehle / Abfragen</text>
+<text x="945.0" y="367.26" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">PATH-Upload</text>
+<rect x="740.0" y="520.0" width="410" height="145" rx="8" ry="8" fill="white" stroke="black" stroke-width="2"/>
+<text x="945.0" y="555.26" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="bold" fill="black">Port 8001</text>
+<text x="945.0" y="606.26" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">Gelenkwinkel-</text>
+<text x="945.0" y="657.26" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">rückführung</text>
+<rect x="730.0" y="810.0" width="430" height="145" rx="8" ry="8" fill="white" stroke="black" stroke-width="2"/>
+<text x="945.0" y="845.26" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="bold" fill="black">Port 8002</text>
+<text x="945.0" y="896.26" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">Laufzeitsteuerung</text>
+<text x="945.0" y="947.26" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="43px" font-weight="normal" fill="black">PATH-Signale</text>
+<text x="945.0" y="1303.08" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="44px" font-weight="normal" fill="black">Nachrichtenformat: ASCII-Zeichenketten mit Zeilenende</text>
+</svg>

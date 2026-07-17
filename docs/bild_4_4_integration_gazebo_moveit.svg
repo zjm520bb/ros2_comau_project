@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16cm" height="28.36cm" viewBox="0 0 1890 3350">
+<rect width="1890" height="3350" fill="white"/>
+<defs><marker id="arrow" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto" markerUnits="strokeWidth"><path d="M 0 0 L 14 7 L 0 14 z" fill="#171717"/></marker></defs>
+<style>.title{font-family:Arial, Liberation Sans, Helvetica, sans-serif;font-size:14.9pt;font-weight:700;fill:#171717}.body{font-family:Arial, Liberation Sans, Helvetica, sans-serif;font-size:11pt;fill:#171717}.bold{font-family:Arial, Liberation Sans, Helvetica, sans-serif;font-size:11.5pt;font-weight:700;fill:#171717}</style>
+<text class="title" x="945.0" y="90" text-anchor="middle">Integration des Robotermodells</text>
+<text class="title" x="945.0" y="168" text-anchor="middle">in Gazebo und MoveIt 2</text>
+<rect x="305" y="245" width="1280" height="300" rx="18" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="bold" x="945.0" y="307.9" text-anchor="middle">Gemeinsame Modellgrundlage</text>
+<text class="body" x="945.0" y="373.9" text-anchor="middle">CAD-basierte Xacro/URDF-Struktur</text>
+<text class="body" x="945.0" y="439.9" text-anchor="middle">im Paket robot_arm3</text>
+<text class="body" x="945.0" y="505.9" text-anchor="middle">Links, Joints, Meshes, Frames und Gelenkgrenzen</text>
+<line x1="945.0" y1="545" x2="945.0" y2="635" stroke="#171717" stroke-width="5" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="945.0" y1="635" x2="480" y2="635" stroke="#171717" stroke-width="5" stroke-linecap="round"/>
+<line x1="945.0" y1="635" x2="1410" y2="635" stroke="#171717" stroke-width="5" stroke-linecap="round"/>
+<line x1="480" y1="635" x2="480" y2="725" stroke="#171717" stroke-width="5" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="1410" y1="635" x2="1410" y2="725" stroke="#171717" stroke-width="5" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="70" y="725" width="820" height="125" rx="18" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="bold" x="480.0" y="799.4" text-anchor="middle">Gazebo / Simulation</text>
+<rect x="1000" y="725" width="820" height="125" rx="18" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="bold" x="1410.0" y="799.4" text-anchor="middle">MoveIt 2 / Planung</text>
+<rect x="70" y="940" width="820" height="205" rx="18" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="body" x="480.0" y="1054.4" text-anchor="middle">robot_arm3_control_05.urdf.xacro</text>
+<line x1="480.0" y1="1155" x2="480.0" y2="1192" stroke="#171717" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="70" y="1210" width="820" height="205" rx="18" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="body" x="480.0" y="1291.4" text-anchor="middle">robot_description und</text>
+<text class="body" x="480.0" y="1357.4" text-anchor="middle">robot_state_publisher</text>
+<line x1="480.0" y1="1425" x2="480.0" y2="1462" stroke="#171717" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="70" y="1480" width="820" height="205" rx="18" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="body" x="480.0" y="1561.4" text-anchor="middle">ros_gz_sim create:</text>
+<text class="body" x="480.0" y="1627.4" text-anchor="middle">Einfügen in empty.sdf</text>
+<line x1="480.0" y1="1695" x2="480.0" y2="1732" stroke="#171717" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="70" y="1750" width="820" height="205" rx="18" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="body" x="480.0" y="1798.4" text-anchor="middle">gz_ros2_control:</text>
+<text class="body" x="480.0" y="1864.4" text-anchor="middle">arm_controller und</text>
+<text class="body" x="480.0" y="1930.4" text-anchor="middle">joint_state_broadcaster</text>
+<line x1="480.0" y1="1965" x2="480.0" y2="2002" stroke="#171717" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="70" y="2020" width="820" height="205" rx="18" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="body" x="480.0" y="2101.4" text-anchor="middle">simulierte Bewegung</text>
+<text class="body" x="480.0" y="2167.4" text-anchor="middle">und Gelenkzustände</text>
+<rect x="1000" y="940" width="820" height="205" rx="18" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="body" x="1410.0" y="1021.4" text-anchor="middle">robot_arm3_moveit.urdf.xacro</text>
+<text class="body" x="1410.0" y="1087.4" text-anchor="middle">und robot_arm3.srdf</text>
+<line x1="1410.0" y1="1155" x2="1410.0" y2="1192" stroke="#171717" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="1000" y="1210" width="820" height="205" rx="18" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="body" x="1410.0" y="1291.4" text-anchor="middle">Planungsgruppe arm:</text>
+<text class="body" x="1410.0" y="1357.4" text-anchor="middle">base_link → tcp_link</text>
+<line x1="1410.0" y1="1425" x2="1410.0" y2="1462" stroke="#171717" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="1000" y="1480" width="820" height="205" rx="18" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="body" x="1410.0" y="1561.4" text-anchor="middle">KDL-Kinematik</text>
+<text class="body" x="1410.0" y="1627.4" text-anchor="middle">und joint_limits.yaml</text>
+<line x1="1410.0" y1="1695" x2="1410.0" y2="1732" stroke="#171717" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="1000" y="1750" width="820" height="205" rx="18" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="body" x="1410.0" y="1831.4" text-anchor="middle">move_group mit OMPL</text>
+<text class="body" x="1410.0" y="1897.4" text-anchor="middle">und Pilz Planner</text>
+<line x1="1410.0" y1="1965" x2="1410.0" y2="2002" stroke="#171717" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="1000" y="2020" width="820" height="205" rx="18" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="body" x="1410.0" y="2101.4" text-anchor="middle">RViz:</text>
+<text class="body" x="1410.0" y="2167.4" text-anchor="middle">Planung und Kollisionsprüfung</text>
+<line x1="480.0" y1="2233" x2="480.0" y2="2360" stroke="#171717" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="1410.0" y1="2233" x2="1410.0" y2="2360" stroke="#171717" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="55" y="2385" width="1780" height="700" rx="20" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="bold" x="105.0" y="2476.9" text-anchor="start">Kopplung zwischen Planung und Simulation</text>
+<rect x="115" y="2550" width="520" height="255" rx="18" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="bold" x="375.0" y="2623.4" text-anchor="middle">MoveIt-Trajektorie</text>
+<text class="body" x="375.0" y="2689.4" text-anchor="middle">joint_1, joint_2, joint_7</text>
+<text class="body" x="375.0" y="2755.4" text-anchor="middle">joint_4 bis joint_6</text>
+<rect x="690" y="2550" width="520" height="255" rx="18" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="bold" x="950.0" y="2623.4" text-anchor="middle">Trajektorien-Bridge</text>
+<text class="body" x="950.0" y="2689.4" text-anchor="middle">moveit_gazebo_</text>
+<text class="body" x="950.0" y="2755.4" text-anchor="middle">trajectory_bridge.py</text>
+<rect x="1265" y="2550" width="520" height="255" rx="18" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="bold" x="1525.0" y="2623.4" text-anchor="middle">Gazebo-Trajektorie</text>
+<text class="body" x="1525.0" y="2689.4" text-anchor="middle">joint_1 bis joint_6</text>
+<text class="body" x="1525.0" y="2755.4" text-anchor="middle">interne Gelenke</text>
+<line x1="645" y1="2677.5" x2="670" y2="2677.5" stroke="#171717" stroke-width="5" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="1220" y1="2677.5" x2="1245" y2="2677.5" stroke="#171717" stroke-width="5" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="945.0" y1="2817" x2="945.0" y2="2885" stroke="#171717" stroke-width="5" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="290" y="2910" width="1310" height="130" rx="18" fill="white" stroke="#171717" stroke-width="3"/>
+<text class="bold" x="945.0" y="2953.9" text-anchor="middle">gemeinsamer digitaler Zwilling:</text>
+<text class="body" x="945.0" y="3019.9" text-anchor="middle">Planung → Simulation → Prüfung</text>
+</svg>

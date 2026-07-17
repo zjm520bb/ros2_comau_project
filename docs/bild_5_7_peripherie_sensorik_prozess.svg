@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160mm" height="220mm" viewBox="0 0 1600 2200">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#000"/>
+    </marker>
+    <style>
+      text { font-family: Arial, Liberation Sans, sans-serif; fill: #000; text-anchor: middle; }
+      .title { font-size: 41px; font-weight: 700; }
+      .head { font-size: 39px; font-weight: 700; }
+      .body { font-size: 39px; font-weight: 400; }
+      .box { fill: #f8f8f8; stroke: #000; stroke-width: 3; }
+      .white { fill: #fff; stroke: #000; stroke-width: 3; }
+      .dash { fill: #fff; stroke: #000; stroke-width: 3; stroke-dasharray: 16 10; }
+      .line { stroke: #000; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect x="25" y="25" width="1550" height="2165" rx="8" class="white"/>
+  <text x="800" y="105" class="title">Einbindung von Peripherie, Sensorik und Prozessabläufen</text>
+
+  <rect x="70" y="155" width="420" height="185" rx="8" class="box"/>
+  <text x="280" y="215" class="head">peripherals.yaml</text>
+  <text x="280" y="280" class="body">Geräte und</text>
+  <text x="280" y="325" class="body">Zustandsfelder</text>
+
+  <rect x="590" y="155" width="420" height="185" rx="8" class="box"/>
+  <text x="800" y="215" class="head">process_demo.yaml</text>
+  <text x="800" y="280" class="body">Ablauf mit</text>
+  <text x="800" y="325" class="body">Bedingungen</text>
+
+  <rect x="1110" y="155" width="420" height="185" rx="8" class="box"/>
+  <text x="1320" y="215" class="head">sensors.yaml</text>
+  <text x="1320" y="295" class="body">virtuelle Sensortopics</text>
+
+  <rect x="390" y="455" width="820" height="240" rx="8" class="white"/>
+  <text x="800" y="535" class="head">process_orchestrator</text>
+  <text x="800" y="620" class="body">führt peripheral, robot, wait_state und delay</text>
+  <text x="800" y="665" class="body">aus</text>
+  <path d="M 280 340 L 575 455" class="line"/>
+  <path d="M 800 340 L 800 455" class="line"/>
+  <path d="M 1320 340 L 1025 455" class="line"/>
+
+  <rect x="70" y="805" width="350" height="225" rx="8" class="box"/>
+  <text x="245" y="870" class="head">Peripherie-</text>
+  <text x="245" y="915" class="head">Actions</text>
+  <text x="245" y="985" class="body">Action-Server</text>
+  <text x="245" y="1030" class="body">execute</text>
+
+  <rect x="485" y="805" width="300" height="225" rx="8" class="box"/>
+  <text x="635" y="870" class="head">Roboter-</text>
+  <text x="635" y="915" class="head">Action</text>
+  <text x="635" y="985" class="body">Execute</text>
+  <text x="635" y="1030" class="body">Command</text>
+
+  <rect x="850" y="805" width="300" height="225" rx="8" class="box"/>
+  <text x="1000" y="895" class="head">Sensorik</text>
+  <text x="1000" y="985" class="body">Wrench und</text>
+  <text x="1000" y="1030" class="body">Druck</text>
+
+  <rect x="1215" y="805" width="315" height="225" rx="8" class="box"/>
+  <text x="1372.5" y="895" class="head">Prozesslogik</text>
+  <text x="1372.5" y="985" class="body">Freigaben</text>
+  <text x="1372.5" y="1030" class="body">prüfen</text>
+
+  <path d="M 575 695 L 245 805" class="line"/>
+  <path d="M 705 695 L 635 805" class="line"/>
+  <path d="M 895 695 L 1000 805" class="line"/>
+  <path d="M 1030 695 L 1372 805" class="line"/>
+
+  <rect x="70" y="1155" width="350" height="220" rx="8" class="white"/>
+  <text x="245" y="1215" class="head">simulierte</text>
+  <text x="245" y="1260" class="head">Peripherie</text>
+  <text x="245" y="1315" class="body">Spindel,</text>
+  <text x="245" y="1360" class="body">Pneumatik,</text>
+  <text x="245" y="1405" class="body">Vorrichtungen</text>
+
+  <rect x="485" y="1155" width="300" height="220" rx="8" class="white"/>
+  <text x="635" y="1240" class="head">reale Zelle</text>
+  <text x="635" y="1310" class="body">gleiche</text>
+  <text x="635" y="1355" class="body">Schnittstellen</text>
+  <text x="635" y="1400" class="body">vorgesehen</text>
+
+  <rect x="850" y="1155" width="300" height="220" rx="8" class="white"/>
+  <text x="1000" y="1240" class="head">Sensordaten</text>
+  <text x="1000" y="1320" class="body">tool_wrench</text>
+  <text x="1000" y="1365" class="body">und pressure</text>
+
+  <rect x="1215" y="1155" width="315" height="220" rx="8" class="white"/>
+  <text x="1372.5" y="1240" class="head">Zustände</text>
+  <text x="1372.5" y="1320" class="body">ready, rpm,</text>
+  <text x="1372.5" y="1365" class="body">clamped, safe</text>
+
+  <path d="M 245 1030 L 245 1155" class="line"/>
+  <path d="M 635 1030 L 635 1155" class="line"/>
+  <path d="M 1000 1030 L 1000 1155" class="line"/>
+  <path d="M 1372 1030 L 1372 1155" class="line"/>
+
+  <rect x="135" y="1505" width="380" height="220" rx="8" class="box"/>
+  <text x="325" y="1585" class="head">State Topics</text>
+  <text x="325" y="1695" class="body">/peripherals/.../state</text>
+
+  <rect x="610" y="1505" width="380" height="220" rx="8" class="box"/>
+  <text x="800" y="1585" class="head">Events</text>
+  <text x="800" y="1695" class="body">/peripherals/events</text>
+
+  <rect x="1085" y="1505" width="380" height="220" rx="8" class="box"/>
+  <text x="1275" y="1585" class="head">Sensor Topics</text>
+  <text x="1275" y="1695" class="body">/sensors/...</text>
+
+  <path d="M 245 1375 L 325 1505" class="line"/>
+  <path d="M 1372 1375 L 325 1505" class="line"/>
+  <path d="M 245 1375 L 800 1505" class="line"/>
+  <path d="M 1000 1375 L 1275 1505" class="line"/>
+
+  <rect x="225" y="1815" width="1150" height="130" rx="8" class="dash"/>
+  <text x="800" y="1870" class="body">wait_state nutzt Gerätezustände als Freigabebedingungen</text>
+  <text x="800" y="1915" class="body">im Prozessablauf.</text>
+  <path d="M 325 1725 L 565 1815" class="line"/>
+  <path d="M 800 1725 L 800 1815" class="line"/>
+  <path d="M 1275 1725 L 1035 1815" class="line"/>
+
+  <rect x="225" y="2025" width="1150" height="140" rx="8" class="dash" fill="#f8f8f8"/>
+  <text x="800" y="2078" class="head">Grundlage für Prozessvalidierung</text>
+  <text x="800" y="2130" class="body">Ereignisse, Zustände, Sensordaten und rosbag2</text>
+  <path d="M 800 1945 L 800 2025" class="line"/>
+</svg>

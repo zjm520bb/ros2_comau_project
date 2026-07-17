@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16cm" height="21.16cm" viewBox="0 0 1890 2500">
+<rect width="1890" height="2500" fill="white"/>
+<style>.t{font-family:Arial,Helvetica,sans-serif;fill:#141414}.title{font-size:15.5pt;font-weight:700}.sub{font-size:13.3pt;font-weight:700}.lab{font-size:12.3pt}.small{font-size:12.3pt}.line{stroke:#141414;stroke-width:12;fill:none;stroke-linecap:round;stroke-linejoin:round}.thin{stroke:#141414;stroke-width:8;fill:none;stroke-linecap:round;stroke-linejoin:round}.dash{stroke:#5f5f5f;stroke-width:7;fill:none;stroke-dasharray:30 22;stroke-linecap:round}.a{fill:#fff4d6;stroke:#141414;stroke-width:7}.p{fill:#e8f2fb;stroke:#141414;stroke-width:7}.box{fill:white;stroke:#141414;stroke-width:4}</style>
+<defs><marker id="arr" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto"><path d="M2,2 L12,7 L2,12 Z" fill="#141414"/></marker></defs>
+<text class="t title" x="945" y="85" text-anchor="middle">Vereinfachung der gekoppelten Viergelenkstruktur</text><text class="t title" x="945" y="155" text-anchor="middle">für die URDF-Modellierung</text>
+<text class="t sub" x="945" y="285" text-anchor="middle">Reale geschlossene Struktur</text>
+<path class="line" d="M420 820 L550 440 L875 440 L720 820 L420 820"/><path class="line" d="M875 440 L1315 440"/>
+<circle class="p" cx="420" cy="820" r="34"/><circle class="a" cx="720" cy="820" r="34"/><circle class="p" cx="550" cy="440" r="34"/><circle class="p" cx="875" cy="440" r="34"/><circle class="a" cx="1315" cy="440" r="34"/>
+<text class="t lab" x="245" y="905">joint_8</text><text class="t lab" x="600" y="905">joint_2 + joint_3</text><text class="t lab" x="820" y="385">joint_7</text><text class="t lab" x="1125" y="385">joint_4 ... joint_6</text><text class="t lab" x="125" y="435">passives Gelenk</text><path class="thin" d="M420 415 L515 435" marker-end="url(#arr)"/><text class="t small" x="945" y="1000" text-anchor="middle" fill="#5f5f5f">geschlossene Schleife / Parallelogramm</text>
+<path class="thin" d="M945 1085 L945 1235" marker-end="url(#arr)"/><text class="t small" x="1220" y="1180" text-anchor="middle">Öffnen der Schleife</text>
+<text class="t sub" x="945" y="1350" text-anchor="middle">URDF-kompatible Baumstruktur</text>
+<path class="line" d="M420 1880 L720 1880 L875 1500 L1315 1500"/><path class="thin" d="M320 1500 L320 1880 L420 1880"/><path class="dash" d="M320 1500 L500 1500"/>
+<circle class="p" cx="420" cy="1880" r="34"/><circle class="a" cx="720" cy="1880" r="34"/><circle class="p" cx="875" cy="1500" r="34"/><circle class="a" cx="1315" cy="1500" r="34"/>
+<path class="thin" d="M292 1472 L348 1528 M292 1528 L348 1472"/>
+<text class="t lab" x="245" y="1965">joint_8</text><text class="t lab" x="600" y="1965">joint_2 + joint_3</text><text class="t lab" x="820" y="1445">joint_7</text><text class="t lab" x="1125" y="1445">joint_4 ... joint_6</text><text class="t lab" x="70" y="1325">geöffnete</text><text class="t lab" x="70" y="1378">Verbindung</text><path class="thin" d="M245 1405 L296 1470" marker-end="url(#arr)"/><text class="t small" x="945" y="2045" text-anchor="middle" fill="#5f5f5f">geöffnete Baumstruktur für URDF</text>
+<rect class="box" x="115" y="2130" width="735" height="315" rx="20"/><circle class="a" cx="180" cy="2212" r="22"/><text class="t lab" x="230" y="2227">aktives Gelenk</text><circle class="p" cx="180" cy="2318" r="22"/><text class="t lab" x="230" y="2295">passives /</text><text class="t lab" x="230" y="2348">modelltechnisches Gelenk</text>
+<rect class="box" x="930" y="2130" width="845" height="315" rx="20"/><text class="t lab" x="985" y="2227">Kopplung im Modell:</text><text class="t lab" x="985" y="2309">q7 = q2 + q3 + pi/2</text><text class="t lab" x="985" y="2391">q8 = -q7</text>
+</svg>

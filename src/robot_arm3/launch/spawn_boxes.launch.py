@@ -45,6 +45,10 @@ def _load_boxes(config_file, package_share_dir):
     if not isinstance(config, dict) or not isinstance(config.get("boxes"), list):
         raise ValueError("Environment config must contain a 'boxes' list")
 
+    c4g_base_height = float(config.get("gazebo_c4g_base_height", 0.0))
+    if not math.isfinite(c4g_base_height):
+        raise ValueError("gazebo_c4g_base_height must be finite")
+
     boxes = []
     identifiers = set()
     for entry in config["boxes"]:
@@ -61,7 +65,9 @@ def _load_boxes(config_file, package_share_dir):
         sdf_file = os.path.join(package_share_dir, "urdf", str(entry.get("sdf", "")))
         if not os.path.isfile(sdf_file):
             raise FileNotFoundError(f"Bounding Box SDF was not found: {sdf_file}")
-        boxes.append((identifier, sdf_file, pose))
+        gazebo_pose = list(pose)
+        gazebo_pose[2] += c4g_base_height
+        boxes.append((identifier, sdf_file, gazebo_pose))
     return boxes
 
 

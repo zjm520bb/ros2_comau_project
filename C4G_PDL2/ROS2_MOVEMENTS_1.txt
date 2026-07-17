@@ -4,8 +4,13 @@ TYPE
   ROS_CART_PATH_NODE = NODEDEF
     $MAIN_POS
     $MOVE_TYPE
+    $CNFG_CARE
+    $ORNT_TYPE
     $LIN_SPD
     $ROT_SPD
+    $SPD_OPT
+    $SING_CARE
+    $TURN_CARE
     $SEG_OVR
     $SEG_TERM_TYPE
     $SEG_TOL
@@ -1200,8 +1205,11 @@ END set_path_condition
 
 ROUTINE path_node_target(path_id, node_index, motion_type, p1, p2, p3, p4, p5, p6 : REAL; paramnumber : INTEGER) : INTEGER
 VAR
-  idx    : INTEGER
-  target : JOINTPOS
+  idx         : INTEGER
+  target      : JOINTPOS
+  target_pos  : POSITION
+  current_pos : POSITION
+  cnfg        : STRING[33]
 BEGIN
   IF NOT check_par_num(paramnumber, 9) THEN
     RETURN(RESULT_UNAVAILABLE)
@@ -1214,7 +1222,16 @@ BEGIN
 
   IF active_path_type = PATH_CART THEN
     NODE_APP(cart_path)
-    cart_path.NODE[idx].$MAIN_POS := POS(p1, p2, p3, p4, p5, p6)
+    target_pos := POS(p1, p2, p3, p4, p5, p6)
+    current_pos := ARM_POS(1)
+    cnfg := POS_GET_CNFG(current_pos)
+    POS_SET_CNFG(target_pos, cnfg)
+    cart_path.NODE[idx].$MAIN_POS := target_pos
+    cart_path.NODE[idx].$CNFG_CARE := FALSE
+    cart_path.NODE[idx].$ORNT_TYPE := WRIST_JNT
+    cart_path.NODE[idx].$SPD_OPT := SPD_LIN
+    cart_path.NODE[idx].$SING_CARE := FALSE
+    cart_path.NODE[idx].$TURN_CARE := FALSE
 
     IF motion_type = 0 THEN
       cart_path.NODE[idx].$MOVE_TYPE := JOINT

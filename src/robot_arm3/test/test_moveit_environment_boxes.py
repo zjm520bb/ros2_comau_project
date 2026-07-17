@@ -34,12 +34,12 @@ def test_motorspindel_touches_ground_before_planning_padding():
     _, padding, boxes = _load()
     motorspindel = next(box for box in boxes if box.identifier == "motorspindel")
 
-    assert motorspindel.pose[:3] == pytest.approx((-2.5, 2.5, 0.5))
+    assert motorspindel.pose[:3] == pytest.approx((-2.5, 2.5, 0.42))
     assert motorspindel.dimensions == pytest.approx(
         (1.5 + 2 * padding, 0.8 + 2 * padding, 1.0 + 2 * padding)
     )
     physical_bottom = motorspindel.pose[2] - (motorspindel.dimensions[2] - 2 * padding) / 2.0
-    assert physical_bottom == pytest.approx(0.0)
+    assert physical_bottom == pytest.approx(-0.08)
 
 
 def test_all_environment_shapes_have_a_valid_planar_rotation():
@@ -70,4 +70,4 @@ def test_schleiftrogs_are_cylinders_with_planning_padding():
     assert schleiftrog_a.dimensions == pytest.approx(
         (1.22 + 2 * padding, 0.54 + padding)
     )
-    assert schleiftrog_a.pose[:3] == pytest.approx((1.9, 0.65, 0.61))
+    assert schleiftrog_a.pose[:3] == pytest.approx((1.9, 0.65, 0.53))

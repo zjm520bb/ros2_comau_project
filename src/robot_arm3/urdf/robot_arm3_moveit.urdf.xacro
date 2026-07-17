@@ -8,7 +8,32 @@
   <!-- Configure the static tool before launch. xyz is metres; rpy is radians. -->
   <xacro:arg name="tcp_xyz" default="0 0 0" />
   <xacro:arg name="tcp_rpy" default="0 0 0" />
+  <xacro:arg name="fixture_rod_length" default="0.20" />
+  <xacro:arg name="fixture_rod_radius" default="0.013" />
+  <xacro:include filename="$(find robot_arm3)/urdf/rod_fixture.xacro" />
   <link name="c4g_base" />
+  <!-- 80 mm support below c4g_base; dimensions clear the base mesh by 200 mm. -->
+  <link name="pedestal_link">
+    <visual>
+      <origin xyz="-0.18 0.068663731 -0.04" rpy="0 0 0" />
+      <geometry>
+        <box size="1.75 1.4243275 0.08" />
+      </geometry>
+      <material name="pedestal_gray">
+        <color rgba="0.24 0.24 0.27 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.18 0.068663731 -0.04" rpy="0 0 0" />
+      <geometry>
+        <box size="1.75 1.4243275 0.08" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="c4g_base_to_pedestal" type="fixed">
+    <parent link="c4g_base" />
+    <child link="pedestal_link" />
+  </joint>
   <joint name="c4g_base_to_base_link" type="fixed">
     <origin xyz="0 0 0" rpy="0 0 3.141592653589793" />
     <parent link="c4g_base" />
@@ -412,12 +437,11 @@
     <parent link="Link_6" />
     <child link="c4g_flange_link" />
   </joint>
-  <link name="tcp_link" />
-  <joint name="flange_to_tcp" type="fixed">
-    <origin xyz="$(arg tcp_xyz)" rpy="$(arg tcp_rpy)" />
-    <parent link="c4g_flange_link" />
-    <child link="tcp_link" />
-  </joint>
+  <xacro:rod_fixture
+    flange_xyz="$(arg tcp_xyz)"
+    flange_rpy="$(arg tcp_rpy)"
+    rod_length="$(arg fixture_rod_length)"
+    rod_radius="$(arg fixture_rod_radius)" />
   <link
     name="Link_7">
     <inertial>

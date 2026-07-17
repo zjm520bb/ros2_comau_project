@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="160mm" height="132mm" viewBox="0 0 1600 1320">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#000000"/>
+    </marker>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; fill: #000000; }
+      .title { font-size: 37px; font-weight: 700; }
+      .box-title { font-size: 35px; font-weight: 700; }
+      .box-text { font-size: 31px; }
+      .small { font-size: 29px; }
+      .box { fill: #ffffff; stroke: #000000; stroke-width: 3; rx: 9; ry: 9; }
+      .dashed { fill: #ffffff; stroke: #000000; stroke-width: 3; stroke-dasharray: 12 8; rx: 9; ry: 9; }
+      .line { stroke: #000000; stroke-width: 4; fill: none; marker-end: url(#arrow); }
+      .plain { stroke: #000000; stroke-width: 4; fill: none; }
+      .divider { stroke: #000000; stroke-width: 2.3; stroke-dasharray: 11 8; }
+    </style>
+  </defs>
+
+  <rect x="30" y="25" width="1540" height="1265" fill="#ffffff" stroke="#000000" stroke-width="3" rx="10" ry="10"/>
+  <text x="800" y="72" class="title" text-anchor="middle">Ausführungskette von MoveIt 2 zu Gazebo Controller</text>
+
+  <!-- Top row -->
+  <rect x="70" y="125" width="335" height="165" class="box"/>
+  <text x="238" y="174" class="box-title" text-anchor="middle">Befehlsebene</text>
+  <text x="238" y="221" class="box-text" text-anchor="middle">Einzelbefehl</text>
+  <text x="238" y="262" class="box-text" text-anchor="middle">Fly-Queue / PATH</text>
+
+  <rect x="450" y="125" width="335" height="165" class="box"/>
+  <text x="618" y="174" class="box-title" text-anchor="middle">MoveIt 2</text>
+  <text x="618" y="221" class="box-text" text-anchor="middle">Planung</text>
+  <text x="618" y="262" class="box-text" text-anchor="middle">Kollisionsprüfung</text>
+
+  <rect x="830" y="125" width="335" height="165" class="box"/>
+  <text x="998" y="174" class="box-title" text-anchor="middle">MoveIt-Controller</text>
+  <text x="998" y="221" class="box-text" text-anchor="middle">FollowJoint</text>
+  <text x="998" y="262" class="box-text" text-anchor="middle">Trajectory</text>
+
+  <rect x="1210" y="125" width="320" height="165" class="box"/>
+  <text x="1370" y="174" class="box-title" text-anchor="middle">Bridge</text>
+  <text x="1370" y="221" class="box-text" text-anchor="middle">Prüfung</text>
+  <text x="1370" y="262" class="box-text" text-anchor="middle">Gelenkumrechnung</text>
+
+  <path d="M 405 208 L 440 208" class="line"/>
+  <path d="M 785 208 L 820 208" class="line"/>
+  <path d="M 1165 208 L 1200 208" class="line"/>
+
+  <line x1="60" y1="335" x2="1540" y2="335" class="divider"/>
+  <text x="80" y="378" class="small">Planungs- und Ausführungsschnittstelle</text>
+
+  <!-- Coupling -->
+  <path d="M 1370 290 L 1370 400" class="line"/>
+  <rect x="1020" y="400" width="540" height="130" class="dashed"/>
+  <text x="1290" y="448" class="box-title" text-anchor="middle">Kopplungsbeziehung</text>
+  <text x="1290" y="493" class="box-text" text-anchor="middle">joint_3 = joint_7 - joint_2 - 1,5708</text>
+  <path d="M 1295 530 L 1295 625" class="line"/>
+
+  <!-- Middle row -->
+  <rect x="100" y="640" width="390" height="180" class="box"/>
+  <text x="295" y="697" class="box-title" text-anchor="middle">Gazebo-Modell</text>
+  <text x="295" y="747" class="box-text" text-anchor="middle">sichtbare Bewegung</text>
+  <text x="295" y="790" class="box-text" text-anchor="middle">des Roboters</text>
+
+  <rect x="600" y="640" width="400" height="180" class="box"/>
+  <text x="800" y="697" class="box-title" text-anchor="middle">Aktive Achsen</text>
+  <text x="800" y="747" class="box-text" text-anchor="middle">JointTrajectory</text>
+  <text x="800" y="790" class="box-text" text-anchor="middle">joint_1 bis joint_6</text>
+
+  <rect x="1095" y="640" width="390" height="180" class="box"/>
+  <text x="1290" y="697" class="box-title" text-anchor="middle">Gazebo-Controller</text>
+  <text x="1290" y="747" class="box-text" text-anchor="middle">FollowJointTrajectory</text>
+  <text x="1290" y="790" class="box-text" text-anchor="middle">/arm_controller</text>
+
+  <path d="M 1095 730 L 1010 730" class="line"/>
+  <path d="M 600 730 L 500 730" class="line"/>
+
+  <line x1="60" y1="885" x2="1540" y2="885" class="divider"/>
+  <text x="80" y="925" class="small">Gazebo-interne</text>
+  <text x="80" y="960" class="small">Nachführung</text>
+  <text x="1040" y="930" class="small">Nachführung der gekoppelten Struktur</text>
+
+  <!-- Passive row -->
+  <path d="M 800 820 L 800 970" class="line"/>
+  <rect x="600" y="970" width="400" height="180" class="box"/>
+  <text x="800" y="1028" class="box-title" text-anchor="middle">Passiver Controller</text>
+  <text x="800" y="1078" class="box-text" text-anchor="middle">joint_7 und joint_8</text>
+  <text x="800" y="1122" class="box-text" text-anchor="middle">aus joint_2 / joint_3</text>
+
+  <path d="M 600 1060 L 390 1060 L 390 820" class="line"/>
+
+  <text x="650" y="1200" class="small">Planung: joint_7</text>
+  <text x="650" y="1240" class="small">Ausführung in Gazebo: joint_3</text>
+</svg>

@@ -1,24 +1,27 @@
 frame_id: c4g_base
 planning_padding: 0.02
+# c4g_base is 80 mm above Gazebo's ground plane.  spawn_boxes.launch.py
+# applies this offset when converting the poses below to Gazebo world poses.
+gazebo_c4g_base_height: 0.08
 
 # Model poses are expressed in metres and radians in the C4G coordinate frame.
-# Gazebo world and c4g_base share the same origin and orientation.
+# The objects rest on the ground, which is z = -0.08 in c4g_base.
 boxes:
   - id: schleiftrog_a
     sdf: bbox_box1.sdf
-    pose: [1.9, 0.65, 0.0, 0.0, 0.0, 3.141592653589793]
+    pose: [1.9, 0.65, -0.08, 0.0, 0.0, 3.141592653589793]
   - id: schleiftrog_b
     sdf: bbox_box1.sdf
-    pose: [1.9, -0.65, 0.0, 0.0, 0.0, 3.141592653589793]
+    pose: [1.9, -0.65, -0.08, 0.0, 0.0, 3.141592653589793]
   - id: motorspindel
     sdf: bbox_box5.sdf
-    pose: [-2.5, 2.5, 0.0, 0.0, 0.0, 3.141592653589793]
+    pose: [-2.5, 2.5, -0.08, 0.0, 0.0, 3.141592653589793]
   - id: fliehkraftgleitschleifanlage
     sdf: bbox_box2.sdf
-    pose: [0.275, -1.955, 0.0, 0.0, 0.0, 3.141592653589793]
+    pose: [0.275, -2.105, -0.08, 0.0, 0.0, 3.141592653589793]
   - id: festo_pneumatiksteuerung
     sdf: bbox_box3.sdf
-    pose: [-2.085674, -1.916709, 0.0, 0.0, 0.0, 2.344612]
+    pose: [-2.141603, -1.938502, -0.08, 0.0, 0.0, 2.324424]
   - id: box4
     sdf: bbox_box4.sdf
-    pose: [1.4756, 2.0568, 0.0, 0.0, 0.0, 2.257418]
+    pose: [1.4756, 2.0568, -0.08, 0.0, 0.0, 2.257418]

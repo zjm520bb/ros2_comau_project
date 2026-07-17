@@ -35,6 +35,13 @@ def _command(name: str, values: Iterable[object]) -> str:
     )
 
 
+def _c4g_percent(value, fallback: float) -> float:
+    value = float(value)
+    if 1.0 <= value <= 100.0:
+        return value
+    return fallback
+
+
 @dataclass(frozen=True)
 class ValidatedPath:
     path_id: int
@@ -288,10 +295,10 @@ def build_upload_commands(path: ValidatedPath) -> list[str]:
                         index,
                         int(node.fly),
                         node.fly_type,
-                        node.fly_percent,
+                        _c4g_percent(node.fly_percent, 75.0),
                         node.fly_distance_mm,
                         node.fly_trajectory,
-                        node.stress_percent,
+                        _c4g_percent(node.stress_percent, 10.0),
                     ),
                 ),
                 _command(

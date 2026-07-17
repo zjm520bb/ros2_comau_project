@@ -2,6 +2,7 @@
 #include <arm_tcp_bridge_interfaces/action/execute_path.hpp>
 #include <arm_tcp_bridge_interfaces/msg/path_block.hpp>
 #include <arm_tcp_bridge_interfaces/msg/path_event.hpp>
+#include <arm_tcp_bridge_interfaces/msg/path_frame.hpp>
 #include <arm_tcp_bridge_interfaces/srv/get_path_state.hpp>
 #include <arm_tcp_bridge_interfaces/srv/signal_path.hpp>
 #include <geometry_msgs/msg/pose.hpp>
@@ -22,6 +23,7 @@
 #include <chrono>
 #include <cmath>
 #include <condition_variable>
+#include <cstdint>
 #include <functional>
 #include <iomanip>
 #include <map>
@@ -54,6 +56,10 @@ constexpr double kPi = 3.14159265358979323846;
 constexpr int kFrameBase = 0;
 constexpr int kFrameTool = 1;
 constexpr int kFrameUser = 2;
+// Cartesian PATH blocks carry the user frame that was active when they were
+// recorded.  Index 1 is local to each PathBlock, so G and H can safely use
+// the same index in different blocks.
+constexpr std::uint8_t kRecordedUserFrameIndex = 1;
 
 double degrees_to_radians(double degrees)
 {
@@ -1194,7 +1200,7 @@ private:
         ExecutePathAction::Goal::CARTESIAN,
         { command_path_node(
             arm_tcp_bridge_interfaces::msg::PathNode::LINEAR,
-            path_target) });
+            path_target, kRecordedUserFrameIndex) });
 
     return motion_name + " finished; " + scaling_description(scaling);
   }
@@ -1250,7 +1256,8 @@ private:
   }
 
   arm_tcp_bridge_interfaces::msg::PathNode command_path_node(
-      std::uint8_t motion_type, const std::vector<double>& target) const
+      std::uint8_t motion_type, const std::vector<double>& target,
+      std::uint8_t reference_index = 0) const
   {
     arm_tcp_bridge_interfaces::msg::PathNode node;
     node.motion_type = motion_type;
@@ -1269,7 +1276,20 @@ private:
     node.fly_distance_mm = 0.0;
     node.fly_trajectory = 0;
     node.stress_percent = 0.0;
+    node.reference_index = reference_index;
+    node.tool_index = 0;
+    node.condition_mask = 0;
+    node.condition_mask_back = 0;
+    node.wait = false;
     return node;
+  }
+
+  arm_tcp_bridge_interfaces::msg::PathFrame recorded_user_frame() const
+  {
+    arm_tcp_bridge_interfaces::msg::PathFrame frame;
+    frame.index = kRecordedUserFrameIndex;
+    frame.pose = frame_transforms_.user_frame_values();
+    return frame;
   }
 
   arm_tcp_bridge_interfaces::msg::PathBlock command_path_block(
@@ -1289,6 +1309,8 @@ private:
     arm_tcp_bridge_interfaces::msg::PathBlock block;
     block.name = name;
     block.path_type = path_type;
+    if (path_type == ExecutePathAction::Goal::CARTESIAN)
+      block.frames.push_back(recorded_user_frame());
     block.nodes = std::move(nodes);
     block.start_index = 1;
     block.end_index = static_cast<std::uint32_t>(block.nodes.size());
@@ -1329,6 +1351,8 @@ private:
       const moveit_msgs::msg::RobotTrajectory& trajectory)
   {
     const bool joint = fly_queue_->type() == FlyQueueType::JOINT;
+    const std::uint8_t reference_index =
+        joint ? 0 : kRecordedUserFrameIndex;
     std::vector<arm_tcp_bridge_interfaces::msg::PathNode> nodes;
     for (std::size_t index = 0; index < fly_queue_->segments().size();
          ++index)
@@ -1342,11 +1366,12 @@ private:
         std::vector<double> destination(segment.values.begin() + 6,
                                         segment.values.end());
         auto via_node = command_path_node(
-            arm_tcp_bridge_interfaces::msg::PathNode::SEG_VIA, via);
+            arm_tcp_bridge_interfaces::msg::PathNode::SEG_VIA, via,
+            reference_index);
         nodes.push_back(via_node);
         auto node = command_path_node(
             arm_tcp_bridge_interfaces::msg::PathNode::CIRCULAR,
-            destination);
+            destination, reference_index);
         node.fly = fly;
         nodes.push_back(node);
       }
@@ -1356,7 +1381,8 @@ private:
             segment.type == FlySegmentType::JOINT
                 ? arm_tcp_bridge_interfaces::msg::PathNode::JOINT
                 : arm_tcp_bridge_interfaces::msg::PathNode::LINEAR;
-        auto node = command_path_node(motion_type, segment.values);
+        auto node = command_path_node(
+            motion_type, segment.values, reference_index);
         node.fly = fly;
         nodes.push_back(node);
       }
@@ -1633,10 +1659,11 @@ private:
         ExecutePathAction::Goal::CARTESIAN,
         {
           command_path_node(
-              arm_tcp_bridge_interfaces::msg::PathNode::SEG_VIA, via),
+              arm_tcp_bridge_interfaces::msg::PathNode::SEG_VIA, via,
+              kRecordedUserFrameIndex),
           command_path_node(
               arm_tcp_bridge_interfaces::msg::PathNode::CIRCULAR,
-              destination),
+              destination, kRecordedUserFrameIndex),
         });
     return "Circular motion finished; " + scaling_description(scaling);
   }

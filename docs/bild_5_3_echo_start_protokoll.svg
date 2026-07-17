@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16cm" height="13.72cm" viewBox="0 0 1890 1620">
+<rect width="100%" height="100%" fill="white"/>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="black"/></marker></defs>
+<rect x="145.0" y="55" width="560" height="105" rx="10" ry="10" fill="#ebebeb" stroke="black" stroke-width="3"/>
+<rect x="1195.0" y="55" width="560" height="105" rx="10" ry="10" fill="#ebebeb" stroke="black" stroke-width="3"/>
+<text x="425.0" y="96.86" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="48px" font-weight="bold" fill="black">ROS 2</text>
+<text x="425.0" y="152.86" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="44px" font-weight="normal" fill="black">Action Server</text>
+<text x="1475.0" y="96.86" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="48px" font-weight="bold" fill="black">Comau C4G</text>
+<text x="1475.0" y="152.86" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="44px" font-weight="normal" fill="black">PDL2-Hauptprogramm</text>
+<line x1="425" y1="170" x2="425" y2="1450" stroke="black" stroke-width="3" stroke-dasharray="22 22"/>
+<line x1="1475" y1="170" x2="1475" y2="1450" stroke="black" stroke-width="3" stroke-dasharray="22 22"/>
+<circle cx="90" cy="300" r="28" fill="white" stroke="black" stroke-width="3"/>
+<text x="90" y="300" dominant-baseline="central" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="42px" font-weight="bold" fill="black">1</text>
+<rect x="625.0" y="169.0" width="650" height="110" rx="8" ry="8" fill="white" stroke="black" stroke-width="2"/>
+<text x="950.0" y="210.07999999999998" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="44px" font-weight="bold" fill="black">Befehl senden</text>
+<text x="950.0" y="266.08" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="44px" font-weight="normal" fill="black">z. B. moveJoint:...</text>
+<line x1="460" y1="300" x2="1440" y2="300" stroke="black" stroke-width="4" marker-end="url(#arrow)"/>
+<circle cx="90" cy="505" r="28" fill="white" stroke="black" stroke-width="3"/>
+<text x="90" y="505" dominant-baseline="central" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="42px" font-weight="bold" fill="black">2</text>
+<rect x="625.0" y="374.0" width="650" height="110" rx="8" ry="8" fill="white" stroke="black" stroke-width="2"/>
+<text x="950.0" y="415.08" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="44px" font-weight="bold" fill="black">Echo zurücksenden</text>
+<text x="950.0" y="471.08" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="44px" font-weight="normal" fill="black">gleiche Zeichenkette</text>
+<line x1="1440" y1="505" x2="460" y2="505" stroke="black" stroke-width="4" marker-end="url(#arrow)"/>
+<circle cx="90" cy="710" r="28" fill="white" stroke="black" stroke-width="3"/>
+<text x="90" y="710" dominant-baseline="central" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="42px" font-weight="bold" fill="black">3</text>
+<rect x="155.0" y="647.5" width="540" height="125" rx="8" ry="8" fill="#f8f8f8" stroke="black" stroke-width="2"/>
+<text x="425.0" y="695.08" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="44px" font-weight="bold" fill="black">Echo prüfen</text>
+<text x="425.0" y="753.08" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="44px" font-weight="normal" fill="black">bei Fehler: Abbruch</text>
+<circle cx="90" cy="930" r="28" fill="white" stroke="black" stroke-width="3"/>
+<text x="90" y="930" dominant-baseline="central" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="42px" font-weight="bold" fill="black">4</text>
+<rect x="610.0" y="799.0" width="680" height="110" rx="8" ry="8" fill="white" stroke="black" stroke-width="2"/>
+<text x="950.0" y="840.08" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="44px" font-weight="bold" fill="black">start senden</text>
+<text x="950.0" y="896.08" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="44px" font-weight="normal" fill="black">Freigabe zur Ausführung</text>
+<line x1="460" y1="930" x2="1440" y2="930" stroke="black" stroke-width="4" marker-end="url(#arrow)"/>
+<circle cx="90" cy="1140" r="28" fill="white" stroke="black" stroke-width="3"/>
+<text x="90" y="1140" dominant-baseline="central" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="42px" font-weight="bold" fill="black">5</text>
+<rect x="1205.0" y="1077.5" width="540" height="125" rx="8" ry="8" fill="#f8f8f8" stroke="black" stroke-width="2"/>
+<text x="1475.0" y="1125.08" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="44px" font-weight="bold" fill="black">Befehl ausführen</text>
+<text x="1475.0" y="1183.08" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="44px" font-weight="normal" fill="black">native C4G-Logik</text>
+<circle cx="90" cy="1360" r="28" fill="white" stroke="black" stroke-width="3"/>
+<text x="90" y="1360" dominant-baseline="central" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="42px" font-weight="bold" fill="black">6</text>
+<rect x="570.0" y="1229.0" width="760" height="110" rx="8" ry="8" fill="white" stroke="black" stroke-width="2"/>
+<text x="950.0" y="1270.08" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="44px" font-weight="bold" fill="black">Abschlussmeldung</text>
+<text x="950.0" y="1326.08" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="44px" font-weight="normal" fill="black">finished / unavailable / error</text>
+<line x1="1440" y1="1360" x2="460" y2="1360" stroke="black" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="190" y="1520" width="1510" height="62" rx="8" ry="8" fill="white" stroke="black" stroke-width="2"/>
+<text x="945.0" y="1564.44" text-anchor="middle" font-family="Arial, Liberation Sans, sans-serif" font-size="42px" font-weight="normal" fill="black">Der Roboterbefehl wird erst nach Echo-Prüfung und start-Freigabe ausgeführt.</text>
+</svg>

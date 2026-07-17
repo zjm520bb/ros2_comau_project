@@ -21,6 +21,7 @@
     <disable_collisions link1="Link_1" link2="Link_7" reason="Adjacent"/>
     <disable_collisions link1="Link_1" link2="Link_8" reason="Default"/>
     <disable_collisions link1="Link_1" link2="base_link" reason="Adjacent"/>
+    <disable_collisions link1="base_link" link2="pedestal_link" reason="Adjacent"/>
     <disable_collisions link1="Link_2" link2="Link_3" reason="Adjacent"/>
     <disable_collisions link1="Link_2" link2="base_link" reason="Never"/>
     <disable_collisions link1="Link_3" link2="Link_4" reason="Adjacent"/>
@@ -32,4 +33,7 @@
     <disable_collisions link1="Link_5" link2="Link_6" reason="Adjacent"/>
     <disable_collisions link1="Link_7" link2="Link_8" reason="Adjacent"/>
     <disable_collisions link1="Link_7" link2="base_link" reason="Never"/>
+    <disable_collisions link1="Link_6" link2="fixture_rod_link" reason="Adjacent"/>
+    <disable_collisions link1="c4g_flange_link" link2="fixture_rod_link" reason="Adjacent"/>
+    <disable_collisions link1="fixture_rod_link" link2="tcp_link" reason="Adjacent"/>
 </robot>

@@ -7,14 +7,14 @@
       <collision name="festo_pneumatiksteuerung_bbox_collision">
         <geometry>
           <box>
-            <size>1.00 1.40 1.82</size>
+            <size>0.96 1.40 1.82</size>
           </box>
         </geometry>
       </collision>
       <visual name="festo_pneumatiksteuerung_bbox_visual">
         <geometry>
           <box>
-            <size>1.00 1.40 1.82</size>
+            <size>0.96 1.40 1.82</size>
           </box>
         </geometry>
         <material>
